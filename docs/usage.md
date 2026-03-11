@@ -41,6 +41,10 @@ Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
 # Optional sandbox signaling env var names:
 Sandbox::Sandboxing.sandbox_env_var = "AGENT_SANDBOX"
 Sandbox::Sandboxing.network_disabled_env_var = "AGENT_SANDBOX_NET_DISABLED"
+
+# Optional Linux helper defaults:
+Sandbox::Sandboxing::LinuxSandbox.default_linux_sandbox_exe = "agent-linux-sandbox"
+Sandbox::Sandboxing::LinuxSandbox.proxy_socket_dir_prefix = "agent-linux-sandbox-proxy-"
 ```
 
 ## Execution Model

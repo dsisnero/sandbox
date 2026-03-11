@@ -882,6 +882,38 @@ end
       ).should be_nil
     end
 
+    it "supports configurable proxy socket dir prefix for owner pid parsing" do
+      previous_prefix = Sandbox::Sandboxing::LinuxSandbox.proxy_socket_dir_prefix
+      begin
+        Sandbox::Sandboxing::LinuxSandbox.proxy_socket_dir_prefix = "agent-linux-sandbox-proxy-"
+        Sandbox::Sandboxing::LinuxSandbox.parse_proxy_socket_dir_owner_pid(
+          "agent-linux-sandbox-proxy-4321-0"
+        ).should eq(4321)
+      ensure
+        Sandbox::Sandboxing::LinuxSandbox.proxy_socket_dir_prefix = previous_prefix
+      end
+    end
+
+    it "supports configurable default linux sandbox executable for inner command" do
+      previous_exe = Sandbox::Sandboxing::LinuxSandbox.default_linux_sandbox_exe
+      begin
+        Sandbox::Sandboxing::LinuxSandbox.default_linux_sandbox_exe = "agent-linux-sandbox"
+        cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
+          sandbox_policy_cwd: "/tmp",
+          use_bwrap_sandbox: true,
+          command: ["/bin/true"]
+        )
+        inner = Sandbox::Sandboxing::LinuxSandbox.run_main(
+          cmd,
+          Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
+          Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled
+        )
+        inner.first.should eq("agent-linux-sandbox")
+      ensure
+        Sandbox::Sandboxing::LinuxSandbox.default_linux_sandbox_exe = previous_exe
+      end
+    end
+
     it "cleans stale proxy socket dirs while leaving unrelated dirs" do
       temp = "/tmp/proxy-routing-spec-#{Random.rand(100_000)}"
       Dir.mkdir_p(temp)

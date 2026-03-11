@@ -23,6 +23,7 @@ module Sandbox
       ]
 
       PROXY_SOCKET_DIR_PREFIX           = "codex-linux-sandbox-proxy-"
+      DEFAULT_LINUX_SANDBOX_EXE         = "codex-linux-sandbox"
       LINUX_PLATFORM_DEFAULT_READ_ROOTS = [
         "/bin",
         "/sbin",
@@ -33,6 +34,26 @@ module Sandbox
         "/nix/store",
         "/run/current-system/sw",
       ]
+      @@proxy_socket_dir_prefix_override : String? = nil
+      @@linux_sandbox_exe_override : String? = nil
+
+      def self.proxy_socket_dir_prefix : String
+        @@proxy_socket_dir_prefix_override || PROXY_SOCKET_DIR_PREFIX
+      end
+
+      def self.proxy_socket_dir_prefix=(value : String) : String
+        @@proxy_socket_dir_prefix_override = value
+        value
+      end
+
+      def self.default_linux_sandbox_exe : String
+        @@linux_sandbox_exe_override || DEFAULT_LINUX_SANDBOX_EXE
+      end
+
+      def self.default_linux_sandbox_exe=(value : String) : String
+        @@linux_sandbox_exe_override = value
+        value
+      end
 
       struct PlannedProxyRoute
         getter env_key : String
@@ -136,9 +157,10 @@ module Sandbox
         landlock_command : LandlockCommand,
         file_system_policy : FileSystemSandboxPolicy,
         network_policy : NetworkSandboxPolicy,
-        current_exe : String = "codex-linux-sandbox",
+        current_exe : String? = nil,
       ) : Array(String)
         raise "No command specified to execute." if landlock_command.command.empty?
+        resolved_exe = current_exe || default_linux_sandbox_exe
 
         ensure_inner_stage_mode_is_valid(
           landlock_command.apply_seccomp_then_exec?,
@@ -160,7 +182,7 @@ module Sandbox
           return build_inner_seccomp_command(
             landlock_command,
             network_policy,
-            current_exe
+            resolved_exe
           )
         end
 
@@ -470,7 +492,7 @@ module Sandbox
       end
 
       def self.parse_proxy_socket_dir_owner_pid(file_name : String) : Int32?
-        suffix = file_name.sub(/^#{Regex.escape(PROXY_SOCKET_DIR_PREFIX)}/, "")
+        suffix = file_name.sub(/^#{Regex.escape(proxy_socket_dir_prefix)}/, "")
         unless suffix == file_name
           suffix.split('-', 2).first?.try do |pid_raw|
             pid_raw.to_i?.try { |pid| pid > 0 ? pid : nil }
