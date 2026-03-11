@@ -996,20 +996,20 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "writes reads and clears setup error report" do
     temp = "/tmp/windows-setup-error-#{Random.rand(100_000)}"
-    codex_home = File.join(temp, "codex-home")
+    sandbox_home = File.join(temp, "sandbox-home")
     report = Sandbox::Sandboxing::WindowsSandbox::SetupErrorReport.new(
       Sandbox::Sandboxing::WindowsSandbox::SetupErrorCode::HelperLogFailed,
       "failed to write C:\\Users\\Alice\\file.txt"
     )
 
-    Sandbox::Sandboxing::WindowsSandbox.write_setup_error_report(codex_home, report)
-    loaded = Sandbox::Sandboxing::WindowsSandbox.read_setup_error_report(codex_home)
+    Sandbox::Sandboxing::WindowsSandbox.write_setup_error_report(sandbox_home, report)
+    loaded = Sandbox::Sandboxing::WindowsSandbox.read_setup_error_report(sandbox_home)
     loaded.should_not be_nil
     loaded.try(&.code).should eq(Sandbox::Sandboxing::WindowsSandbox::SetupErrorCode::HelperLogFailed)
     loaded.try(&.message).should eq("failed to write C:\\Users\\Alice\\file.txt")
 
-    Sandbox::Sandboxing::WindowsSandbox.clear_setup_error_report(codex_home)
-    Sandbox::Sandboxing::WindowsSandbox.read_setup_error_report(codex_home).should be_nil
+    Sandbox::Sandboxing::WindowsSandbox.clear_setup_error_report(sandbox_home)
+    Sandbox::Sandboxing::WindowsSandbox.read_setup_error_report(sandbox_home).should be_nil
     FileUtils.rm_rf(temp)
   end
 
@@ -1411,9 +1411,9 @@ describe Sandbox::Sandboxing::WindowsSandbox do
   end
 
   it "builds helper bin dir under sandbox-bin" do
-    codex_home = "/tmp/codex-home"
-    actual = Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(codex_home)
-    expected = "/tmp/codex-home/.sandbox-bin"
+    sandbox_home = "/tmp/sandbox-home"
+    actual = Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(sandbox_home)
+    expected = "/tmp/sandbox-home/.sandbox-bin"
     Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(actual).should eq(
       Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(expected)
     )
@@ -1479,7 +1479,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
   it "applies world-writable scan and deny pass without raising" do
     temp = "/tmp/windows-audit-apply-#{Random.rand(100_000)}"
     cwd = File.join(temp, "cwd")
-    codex_home = File.join(temp, "codex-home")
+    sandbox_home = File.join(temp, "sandbox-home")
     suspicious = File.join(cwd, "world")
     Dir.mkdir_p(suspicious)
     File.chmod(suspicious, 0o777)
@@ -1488,7 +1488,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
       cwd,
       Hash(String, String).new,
       "workspace-write",
-      codex_home
+      sandbox_home
     )
     FileUtils.rm_rf(temp)
   end
@@ -1507,7 +1507,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
       [outside, inside],
       "workspace-write",
       cwd,
-      File.join(temp, "codex-home")
+      File.join(temp, "sandbox-home")
     )
 
     {% if flag?(:win32) %}
@@ -1561,14 +1561,14 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "sandbox identity completion requires marker and users files" do
     temp = "/tmp/windows-sandbox-identity-#{Random.rand(100_000)}"
-    codex_home = File.join(temp, "codex-home")
-    FileUtils.mkdir_p(Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(codex_home))
-    FileUtils.mkdir_p(Sandbox::Sandboxing::WindowsSandbox.sandbox_secrets_dir(codex_home))
+    sandbox_home = File.join(temp, "sandbox-home")
+    FileUtils.mkdir_p(Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(sandbox_home))
+    FileUtils.mkdir_p(Sandbox::Sandboxing::WindowsSandbox.sandbox_secrets_dir(sandbox_home))
 
-    Sandbox::Sandboxing::WindowsSandbox.sandbox_setup_is_complete(codex_home).should be_false
-    File.write(Sandbox::Sandboxing::WindowsSandbox.setup_marker_path(codex_home), "{}")
-    File.write(Sandbox::Sandboxing::WindowsSandbox.sandbox_users_path(codex_home), "{}")
-    Sandbox::Sandboxing::WindowsSandbox.sandbox_setup_is_complete(codex_home).should be_true
+    Sandbox::Sandboxing::WindowsSandbox.sandbox_setup_is_complete(sandbox_home).should be_false
+    File.write(Sandbox::Sandboxing::WindowsSandbox.setup_marker_path(sandbox_home), "{}")
+    File.write(Sandbox::Sandboxing::WindowsSandbox.sandbox_users_path(sandbox_home), "{}")
+    Sandbox::Sandboxing::WindowsSandbox.sandbox_setup_is_complete(sandbox_home).should be_true
     FileUtils.rm_rf(temp)
   end
 
@@ -1701,14 +1701,14 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           "/tmp",
           "/tmp",
           env,
-          "/tmp/codex-home-stub"
+          "/tmp/sandbox-home-stub"
         )
         Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh_with_extra_read_roots(
           "workspace-write",
           "/tmp",
           "/tmp",
           env,
-          "/tmp/codex-home-stub",
+          "/tmp/sandbox-home-stub",
           ["/tmp"]
         )
         Sandbox::Sandboxing::WindowsSandbox.run_elevated_setup(
@@ -1716,7 +1716,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           "/tmp",
           "/tmp",
           env,
-          "/tmp/codex-home-stub"
+          "/tmp/sandbox-home-stub"
         )
       ensure
         if previous
@@ -1732,7 +1732,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           "/tmp",
           "/tmp",
           env,
-          "/tmp/codex-home-stub"
+          "/tmp/sandbox-home-stub"
         )
       end
       expect_raises(Exception, /Windows sandbox is only available on Windows/) do
@@ -1741,7 +1741,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           "/tmp",
           "/tmp",
           env,
-          "/tmp/codex-home-stub",
+          "/tmp/sandbox-home-stub",
           ["/tmp"]
         )
       end
@@ -1751,7 +1751,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           "/tmp",
           "/tmp",
           env,
-          "/tmp/codex-home-stub"
+          "/tmp/sandbox-home-stub"
         )
       end
     {% end %}
@@ -1759,7 +1759,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "setup refresh writes setup marker and sandbox users artifacts" do
     temp = "/tmp/windows-setup-refresh-#{Random.rand(100_000)}"
-    codex_home = File.join(temp, "codex-home")
+    sandbox_home = File.join(temp, "sandbox-home")
     workspace = File.join(temp, "workspace")
     Dir.mkdir_p(workspace)
 
@@ -1772,7 +1772,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           workspace,
           workspace,
           Hash(String, String).new,
-          codex_home
+          sandbox_home
         )
       ensure
         if previous
@@ -1782,8 +1782,8 @@ describe Sandbox::Sandboxing::WindowsSandbox do
         end
       end
 
-      File.exists?(Sandbox::Sandboxing::WindowsSandbox.setup_marker_path(codex_home)).should be_true
-      File.exists?(Sandbox::Sandboxing::WindowsSandbox.sandbox_users_path(codex_home)).should be_true
+      File.exists?(Sandbox::Sandboxing::WindowsSandbox.setup_marker_path(sandbox_home)).should be_true
+      File.exists?(Sandbox::Sandboxing::WindowsSandbox.sandbox_users_path(sandbox_home)).should be_true
     {% else %}
       expect_raises(Exception, /Windows sandbox is only available on Windows/) do
         Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh(
@@ -1791,7 +1791,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           workspace,
           workspace,
           Hash(String, String).new,
-          codex_home
+          sandbox_home
         )
       end
     {% end %}
@@ -1800,7 +1800,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "setup refresh with extra read roots persists existing extra roots" do
     temp = "/tmp/windows-setup-refresh-extra-#{Random.rand(100_000)}"
-    codex_home = File.join(temp, "codex-home")
+    sandbox_home = File.join(temp, "sandbox-home")
     workspace = File.join(temp, "workspace")
     extra = File.join(temp, "extra")
     missing = File.join(temp, "missing")
@@ -1816,7 +1816,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           workspace,
           workspace,
           Hash(String, String).new,
-          codex_home,
+          sandbox_home,
           [extra, missing]
         )
       ensure
@@ -1827,7 +1827,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
         end
       end
 
-      roots_path = File.join(Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(codex_home), "read_roots.json")
+      roots_path = File.join(Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(sandbox_home), "read_roots.json")
       File.exists?(roots_path).should be_true
       roots = Array(String).from_json(File.read(roots_path))
       canonical_roots = roots.map { |root| Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(root) }
@@ -1840,7 +1840,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
           workspace,
           workspace,
           Hash(String, String).new,
-          codex_home,
+          sandbox_home,
           [extra, missing]
         )
       end
@@ -1872,14 +1872,14 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "hide users helpers are callable no-ops in crystal port" do
     temp = "/tmp/windows-hide-users-#{Random.rand(100_000)}"
-    codex_home = File.join(temp, "codex-home")
-    sandbox_dir = Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(codex_home)
+    sandbox_home = File.join(temp, "sandbox-home")
+    sandbox_dir = Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(sandbox_home)
     Dir.mkdir_p(sandbox_dir)
 
     previous_home = ENV["HOME"]?
     begin
       ENV["HOME"] = temp
-      Sandbox::Sandboxing::WindowsSandbox.hide_current_user_profile_dir(codex_home)
+      Sandbox::Sandboxing::WindowsSandbox.hide_current_user_profile_dir(sandbox_home)
     ensure
       if previous_home
         ENV["HOME"] = previous_home
@@ -1890,7 +1890,7 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
     Sandbox::Sandboxing::WindowsSandbox.hide_newly_created_users(
       ["CodexSandboxOffline", "CodexSandboxOnline"],
-      codex_home
+      sandbox_home
     )
 
     profile_file = File.join(sandbox_dir, "hidden_profile_dirs.json")
@@ -1931,22 +1931,22 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "gather read roots includes helper bin dir" do
     temp = "/tmp/windows-gather-read-roots-#{Random.rand(100_000)}"
-    codex_home = File.join(temp, "codex-home")
+    sandbox_home = File.join(temp, "sandbox-home")
     command_cwd = File.join(temp, "workspace")
     Dir.mkdir_p(command_cwd)
 
-    roots = Sandbox::Sandboxing::WindowsSandbox.gather_read_roots(command_cwd, codex_home)
-    expected = File.realpath(Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(codex_home))
+    roots = Sandbox::Sandboxing::WindowsSandbox.gather_read_roots(command_cwd, sandbox_home)
+    expected = File.realpath(Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(sandbox_home))
     roots.includes?(expected).should be_true
     FileUtils.rm_rf(temp)
   end
 
   it "copies runner into shared bin dir" do
     temp = "/tmp/windows-helper-copy-runner-#{Random.rand(100_000)}"
-    codex_home = File.join(temp, "codex-home")
+    sandbox_home = File.join(temp, "sandbox-home")
     source = File.join(temp, "codex-command-runner.exe")
     destination = File.join(
-      Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(codex_home),
+      Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(sandbox_home),
       "codex-command-runner.exe"
     )
     Dir.mkdir_p(temp)
