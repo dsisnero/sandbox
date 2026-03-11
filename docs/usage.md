@@ -3,6 +3,28 @@
 Library version: `v0.7.0`
 Release notes: [CHANGELOG.md](/Users/dominic/repos/github.com/dsisnero/sandbox/CHANGELOG.md)
 
+## Purpose
+
+Use this library to plan sandboxed command execution for a Crystal agent runtime.
+It decides sandbox backend, transforms high-level command intent into an executable
+request, and exposes helper APIs for Linux/macOS/Windows sandbox behavior.
+
+The library does not run your subprocess for you.
+
+## What Your Agent Must Provide
+
+Your agent/orchestrator is responsible for:
+
+- Building `CommandSpec` from tool call intent (`program`, `args`, `cwd`, `env`, expiration, permissions).
+- Selecting policies (`FileSystemSandboxPolicy`, `NetworkSandboxPolicy`, preference, Windows sandbox level).
+- Supplying platform-specific executable/runtime inputs:
+  - Linux: `linux_sandbox_exe` when using `SandboxType::LinuxSeccomp`.
+  - macOS: host must provide `/usr/bin/sandbox-exec`.
+  - Windows: host must support restricted-token execution and any required setup APIs.
+- Executing the resulting `ExecRequest` (`command`, `env`, `cwd`) with your process runner.
+- Capturing stdout/stderr/exit code and classifying denials via `manager.denied(...)`.
+- Applying your own timeout, cancellation, retries, streaming, and audit logging policies.
+
 ## Quick Start
 
 ```crystal
@@ -32,42 +54,42 @@ request = manager.transform(
   linux_sandbox_exe: "/usr/local/bin/agent-linux-sandbox",
   use_linux_sandbox_bwrap: true
 )
-
-# Optional Windows state root (setup markers, logs, helper metadata):
-Sandbox::Sandboxing::WindowsSandbox.sandbox_home = "/var/lib/my-agent/sandbox-state"
-
-# Optional Windows sandbox identity defaults:
-Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group = "AgentSandboxUsers"
-Sandbox::Sandboxing::WindowsSandbox.offline_username = "AgentSandboxOffline"
-Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
-
-# Optional sandbox signaling env var names:
-Sandbox::Sandboxing.sandbox_env_var = "AGENT_SANDBOX"
-Sandbox::Sandboxing.network_disabled_env_var = "AGENT_SANDBOX_NET_DISABLED"
-
-# Optional Linux helper defaults:
-Sandbox::Sandboxing::LinuxSandbox.default_linux_sandbox_exe = "agent-linux-sandbox"
-Sandbox::Sandboxing::LinuxSandbox.proxy_socket_dir_prefix = "agent-linux-sandbox-proxy-"
 ```
 
-## Execution Model
+## Planning Flow
 
-- This library does not execute the final process directly.
-- Your runner should execute:
-  - `request.command`
-  - with `request.env`
-  - in `request.cwd`
+1. Build `CommandSpec` from user/tool intent.
+2. Compute `sandbox_type` via `select_initial(...)`.
+3. Call `transform(...)` to produce `ExecRequest`.
+4. Execute `ExecRequest` with your own runner.
+5. Use `denied(...)` + exit code/stderr to classify policy denials.
 
-## What It Returns On Restricted Actions
+## Transform Inputs And Outputs
 
-- `manager.transform(...)` always returns an `ExecRequest` (planning output), even for commands that may later be denied by sandbox policy.
-- Denial happens at execution time, not transform time.
-- If a command performs a restricted action, the launched process usually returns:
-  - non-zero exit code
-  - stderr containing denial text (for example permission/sandbox denied wording)
-- You can classify a denial with `manager.denied(sandbox_type, stderr, exit_code)`.
+### Input (`CommandSpec` + policy)
 
-Example:
+- `CommandSpec` carries command/env/cwd and metadata.
+- Filesystem/network policies define target sandbox restrictions.
+- `SandboxType` determines wrapping strategy by platform.
+
+### Output (`ExecRequest`)
+
+- `request.command`: fully wrapped argv (if sandbox enabled).
+- `request.env`: env including policy-driven entries.
+- `request.cwd`: working directory for spawn.
+- `request.arg0`: optional argv0 override metadata.
+
+`transform(...)` is a planning step and generally returns an `ExecRequest` even if
+execution will later be denied.
+
+## Handling Restricted Actions
+
+A restricted action is usually observed at runtime:
+
+- non-zero exit code
+- denial-related stderr text
+
+Example classification pattern:
 
 ```crystal
 status = Process.run(
@@ -80,56 +102,75 @@ status = Process.run(
 )
 
 exit_code = status.exit_code
-stderr_text = "" # capture from your runner's stderr pipe/buffer
+stderr_text = "" # capture from your stderr buffer/pipe
 denied = manager.denied(sandbox_type, stderr_text, exit_code)
 ```
 
-Windows helper capture API behavior:
-
-- `Sandbox::Sandboxing::WindowsSandbox.run_windows_sandbox_capture(...)` returns `CaptureResult`.
-- On restricted/failed runs, `CaptureResult.exit_code` is non-zero and `CaptureResult.stderr` contains failure details.
-- On non-Windows hosts, it returns a non-zero result with `stderr` indicating Windows sandbox availability is required.
-
 ## Policy Selection
 
-- `SandboxPreference::Auto`: choose sandbox backend based on policy + platform.
-- `SandboxPreference::Require`: force platform sandbox.
-- `SandboxPreference::Forbid`: force no sandbox wrapping.
+- `SandboxPreference::Auto`: choose based on policy + platform.
+- `SandboxPreference::Require`: force platform sandbox backend.
+- `SandboxPreference::Forbid`: no sandbox wrapping.
 
-Typical policies:
+Typical outcomes:
 
-- Restricted filesystem + restricted network:
-  - maximizes sandbox wrapping.
-- Unrestricted filesystem + enabled network:
-  - often resolves to `SandboxType::None` in `Auto`.
+- Restricted FS + restricted network in `Auto`: usually sandboxed backend.
+- Unrestricted FS + enabled network in `Auto`: often `SandboxType::None`.
 
-## Platform Notes
+## Platform Integration Notes
 
-- Linux:
-  - Provide `linux_sandbox_exe` when Linux sandbox wrapping is expected.
-  - Backward-compatible alias: `codex_linux_sandbox_exe`.
-  - `use_linux_sandbox_bwrap` enables bwrap-style wrapping path.
-- macOS:
-  - Uses `/usr/bin/sandbox-exec` integration through seatbelt policy generation.
-- Windows:
-  - Uses Windows sandbox module behavior through policy-driven request transformation.
-  - Configure `Sandbox::Sandboxing::WindowsSandbox.sandbox_home` to choose where Windows setup/state files are persisted.
-  - Configure sandbox identity defaults for your agent:
-    - `Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group`
-    - `Sandbox::Sandboxing::WindowsSandbox.offline_username`
-    - `Sandbox::Sandboxing::WindowsSandbox.online_username`
-  - Windows setup/identity helper APIs are Windows-only and fail fast on Linux/macOS hosts.
-  - `run_windows_sandbox_capture`, Windows preflight, and setup refresh/elevated setup reject insecure unsandboxed fallback by default.
-  - Transitional override (not recommended): set `SBX_WINDOWS_ALLOW_INSECURE_FALLBACK=1`.
+### Linux
 
-## Minimal Runner Example
+- Provide `linux_sandbox_exe` when using Linux seccomp sandbox transforms.
+- `codex_linux_sandbox_exe` remains as backward-compatible alias.
+- `use_linux_sandbox_bwrap: true` enables bwrap-style wrapping.
+- Optional global defaults:
+  - `LinuxSandbox.default_linux_sandbox_exe`
+  - `LinuxSandbox.proxy_socket_dir_prefix`
+
+### macOS
+
+- Seatbelt integration uses `/usr/bin/sandbox-exec`.
+- Policy generation is done by `MacosSeatbelt` helper integration.
+
+### Windows
+
+- Uses restricted-token sandbox behavior from `WindowsSandbox` module.
+- Optional runtime defaults:
+  - `WindowsSandbox.sandbox_home`
+  - `WindowsSandbox.sandbox_users_group`
+  - `WindowsSandbox.offline_username`
+  - `WindowsSandbox.online_username`
+- Windows-only helper APIs fail fast on non-Windows hosts.
+- `run_windows_sandbox_capture(...)` returns `CaptureResult` with `exit_code`, `stdout`, `stderr`.
+
+## Optional Global Configuration
 
 ```crystal
-status = Process.run(
-  request.command.first,
-  args: request.command[1..],
-  env: request.env,
-  chdir: request.cwd
-)
-puts status.exit_code
+Sandbox::Sandboxing::WindowsSandbox.sandbox_home = "/var/lib/my-agent/sandbox-state"
+Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group = "AgentSandboxUsers"
+Sandbox::Sandboxing::WindowsSandbox.offline_username = "AgentSandboxOffline"
+Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
+
+Sandbox::Sandboxing.sandbox_env_var = "AGENT_SANDBOX"
+Sandbox::Sandboxing.network_disabled_env_var = "AGENT_SANDBOX_NET_DISABLED"
+
+Sandbox::Sandboxing::LinuxSandbox.default_linux_sandbox_exe = "agent-linux-sandbox"
+Sandbox::Sandboxing::LinuxSandbox.proxy_socket_dir_prefix = "agent-linux-sandbox-proxy-"
 ```
+
+## Minimal Runner Contract
+
+At minimum your agent runtime should do all of the following:
+
+- Build and validate `CommandSpec`.
+- Convert to `ExecRequest` using `select_initial` + `transform`.
+- Execute command with exact `env` and `cwd` from the request.
+- Capture exit code/stderr and classify denial with `manager.denied(...)`.
+- Return structured result to caller (stdout/stderr/exit code/denied flag).
+
+## Related Docs
+
+- [Architecture](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/architecture.md)
+- [Development](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/development.md)
+- [Testing](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/testing.md)
