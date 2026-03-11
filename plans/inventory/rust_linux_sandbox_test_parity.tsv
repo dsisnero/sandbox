@@ -1,0 +1,43 @@
+# source_test_id	status	crystal_refs	notes
+src/bwrap.rs::test::full_disk_write_full_network_returns_unwrapped_command	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap full filesystem parity in progress
+src/bwrap.rs::test::full_disk_write_proxy_only_keeps_full_filesystem_but_unshares_network	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap full filesystem parity in progress
+src/bwrap.rs::test::mounts_dev_before_writable_dev_binds	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap filesystem argument parity in progress
+src/bwrap.rs::test::restricted_read_only_uses_scoped_read_roots_instead_of_erroring	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap filesystem argument parity in progress
+src/bwrap.rs::test::restricted_read_only_with_platform_defaults_includes_usr_when_present	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap filesystem argument parity in progress
+src/bwrap.rs::test::split_policy_masks_root_read_directory_carveouts	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap filesystem argument parity in progress
+src/bwrap.rs::test::split_policy_masks_root_read_file_carveouts	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap filesystem argument parity in progress
+src/bwrap.rs::test::split_policy_reapplies_unreadable_carveouts_after_writable_binds	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap filesystem argument parity in progress
+src/landlock.rs::test::full_network_policy_without_managed_network_skips_seccomp	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux seccomp decision parity in progress
+src/landlock.rs::test::full_network_without_managed_proxy_skips_network_seccomp_mode	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux seccomp decision parity in progress
+src/landlock.rs::test::managed_network_enforces_seccomp_even_for_full_network_policy	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux seccomp decision parity in progress
+src/landlock.rs::test::managed_proxy_routes_use_proxy_routed_seccomp_mode	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux seccomp decision parity in progress
+src/landlock.rs::test::restricted_network_policy_always_installs_seccomp	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux seccomp decision parity in progress
+src/landlock.rs::test::restricted_network_without_proxy_routing_uses_restricted_mode	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux seccomp decision parity in progress
+src/linux_run_main_tests.rs::test::apply_seccomp_then_exec_without_bwrap_panics	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/linux_run_main_tests.rs::test::detects_proc_mount_invalid_argument_failure	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proc mount classifier parity in progress
+src/linux_run_main_tests.rs::test::detects_proc_mount_operation_not_permitted_failure	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proc mount classifier parity in progress
+src/linux_run_main_tests.rs::test::detects_proc_mount_permission_denied_failure	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proc mount classifier parity in progress
+src/linux_run_main_tests.rs::test::ignores_non_proc_mount_errors	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proc mount classifier parity in progress
+src/linux_run_main_tests.rs::test::inner_command_includes_split_policy_flags	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/linux_run_main_tests.rs::test::inserts_bwrap_argv0_before_command_separator	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux inner command argv shape parity in progress
+src/linux_run_main_tests.rs::test::inserts_unshare_net_when_network_isolation_requested	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap network unshare parity in progress
+src/linux_run_main_tests.rs::test::inserts_unshare_net_when_proxy_only_network_mode_requested	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap network unshare parity in progress
+src/linux_run_main_tests.rs::test::managed_proxy_inner_command_includes_route_spec	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux managed proxy command parity in progress
+src/linux_run_main_tests.rs::test::managed_proxy_inner_command_requires_route_spec	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/linux_run_main_tests.rs::test::managed_proxy_preflight_argv_is_wrapped_for_full_access_policy	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux managed proxy preflight parity in progress
+src/linux_run_main_tests.rs::test::non_managed_inner_command_omits_route_spec	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/linux_run_main_tests.rs::test::proxy_only_mode_takes_precedence_over_full_network_policy	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux bwrap network mode parity in progress
+src/linux_run_main_tests.rs::test::resolve_sandbox_policies_derives_legacy_policy_from_split_policies	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/linux_run_main_tests.rs::test::resolve_sandbox_policies_derives_split_policies_from_legacy_policy	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/linux_run_main_tests.rs::test::resolve_sandbox_policies_rejects_partial_split_policies	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/linux_run_main_tests.rs::test::valid_inner_stage_modes_do_not_panic	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux run_main parity in progress
+src/proxy_routing.rs::test::cleanup_proxy_socket_dir_removes_bridge_artifacts	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::cleanup_stale_proxy_socket_dirs_removes_dead_pid_directories	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::default_proxy_ports_match_expected_schemes	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::ignores_non_loopback_proxy_endpoint	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::parse_proxy_socket_dir_owner_pid_reads_owner_pid	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::parses_loopback_proxy_endpoint	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::plan_proxy_routes_only_includes_valid_loopback_endpoints	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::proxy_route_spec_serialization_omits_proxy_urls	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::recognizes_proxy_env_keys_case_insensitively	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress
+src/proxy_routing.rs::test::rewrites_proxy_url_to_local_loopback_port	ported	src/sandbox/sandboxing/linux_sandbox.cr;spec/sandbox_spec.cr	linux proxy routing port in progress

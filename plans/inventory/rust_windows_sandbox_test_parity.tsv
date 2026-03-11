@@ -1,0 +1,32 @@
+# source_test_id	status	crystal_refs	notes
+src/allow.rs::test::denies_codex_and_agents_inside_writable_root	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/allow.rs::test::denies_git_dir_inside_writable_root	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/allow.rs::test::denies_git_file_inside_writable_root	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/allow.rs::test::excludes_tmp_env_vars_when_requested	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/allow.rs::test::includes_additional_writable_roots	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/allow.rs::test::skips_protected_subdirs_when_missing	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/audit.rs::test::gathers_path_entries_by_list_separator	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit candidate path parsing parity ported
+src/cap.rs::test::equivalent_cwd_spellings_share_workspace_sid_key	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows workspace capability sid keying parity ported
+src/command_runner_win.rs::test::removes_request_file_after_read	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows command runner request file parity ported
+src/elevated_impl.rs::test::applies_network_block_for_read_only	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
+src/elevated_impl.rs::test::applies_network_block_when_access_is_disabled	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
+src/elevated_impl.rs::test::skips_network_block_when_access_is_allowed	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
+src/helper_materialization.rs::test::copy_from_source_if_needed_copies_missing_destination	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows helper materialization parity ported
+src/helper_materialization.rs::test::copy_from_source_if_needed_reuses_fresh_destination	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows helper materialization parity ported
+src/helper_materialization.rs::test::copy_runner_into_shared_bin_dir	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows helper materialization parity ported
+src/helper_materialization.rs::test::destination_is_fresh_uses_size_and_mtime	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows helper materialization parity ported
+src/helper_materialization.rs::test::helper_bin_dir_is_under_sandbox_bin	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows helper materialization parity ported
+src/lib.rs::test::applies_network_block_for_read_only	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
+src/lib.rs::test::applies_network_block_when_access_is_disabled	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
+src/lib.rs::test::skips_network_block_when_access_is_allowed	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
+src/logging.rs::test::preview_does_not_panic_on_utf8_boundary	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
+src/path_normalization.rs::test::canonical_path_key_normalizes_case_and_separators	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows path normalization parity ported
+src/policy.rs::test::parses_read_only_policy	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy parsing parity ported
+src/policy.rs::test::rejects_external_sandbox_json	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy parsing parity ported
+src/policy.rs::test::rejects_external_sandbox_preset	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy parsing parity ported
+src/setup_error.rs::test::sanitize_tag_value_leaves_unknown_segments	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error sanitization parity ported
+src/setup_error.rs::test::sanitize_tag_value_redacts_multiple_occurrences	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error sanitization parity ported
+src/setup_error.rs::test::sanitize_tag_value_redacts_username_segments	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error sanitization parity ported
+src/setup_orchestrator.rs::test::gather_read_roots_includes_helper_bin_dir	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator read roots parity ported
+src/setup_orchestrator.rs::test::profile_read_roots_excludes_configured_top_level_entries	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator read roots parity ported
+src/setup_orchestrator.rs::test::profile_read_roots_falls_back_to_profile_root_when_enumeration_fails	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator read roots parity ported
