@@ -60,7 +60,7 @@ request = manager.transform(
   fs_policy,
   net_policy,
   sandbox_type,
-  codex_linux_sandbox_exe: "/usr/local/bin/codex-linux-sandbox",
+  linux_sandbox_exe: "/usr/local/bin/agent-linux-sandbox",
   use_linux_sandbox_bwrap: true
 )
 
@@ -86,7 +86,8 @@ Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
    - `select_initial(...)` chooses a platform sandbox type (`LinuxSeccomp`, `MacosSeatbelt`, `WindowsRestrictedToken`, or `None`) based on policy + platform + preference.
 4. Build executable request:
    - `transform(...)` converts your high-level `CommandSpec` into an `ExecRequest`.
-   - On Linux, passing `codex_linux_sandbox_exe` + `use_linux_sandbox_bwrap: true` wraps the command for the Linux sandbox binary.
+   - On Linux, passing `linux_sandbox_exe` + `use_linux_sandbox_bwrap: true` wraps the command for the Linux sandbox binary.
+   - Backward-compatible alias: `codex_linux_sandbox_exe`.
    - It also injects policy-derived env vars (for example network-disabled signaling under restricted network policy).
    - On Windows, `WindowsSandbox.sandbox_home` controls where setup metadata/log files are stored (defaults to current working directory unless overridden).
    - Windows sandbox identity defaults are configurable via:

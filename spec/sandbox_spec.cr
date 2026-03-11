@@ -66,7 +66,7 @@ describe Sandbox::Sandboxing do
       Sandbox::Sandboxing::SandboxType::None
     )
 
-    request.env[Sandbox::Sandboxing::CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR]?.should eq("1")
+    request.env[Sandbox::Sandboxing::SANDBOX_NETWORK_DISABLED_ENV_VAR]?.should eq("1")
     request.command.should eq(["echo", "hello"])
   end
 
@@ -81,7 +81,7 @@ describe Sandbox::Sandboxing do
       Sandbox::Sandboxing::SandboxType::None
     )
 
-    request.env.has_key?(Sandbox::Sandboxing::CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR).should be_false
+    request.env.has_key?(Sandbox::Sandboxing::SANDBOX_NETWORK_DISABLED_ENV_VAR).should be_false
   end
 
   it "wraps linux sandbox command and arg0 when executable is provided" do
@@ -100,6 +100,22 @@ describe Sandbox::Sandboxing do
       ["/tmp/codex-linux-sandbox", "--use-bwrap", "--", "true"]
     )
     request.arg0.should eq("codex-linux-sandbox")
+  end
+
+  it "accepts linux_sandbox_exe alias for executable path" do
+    request = manager.transform(
+      Sandbox::Sandboxing::CommandSpec.new(
+        program: "true"
+      ),
+      Sandbox::Sandboxing::FileSystemSandboxPolicy.unrestricted,
+      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+      Sandbox::Sandboxing::SandboxType::LinuxSeccomp,
+      linux_sandbox_exe: "/tmp/agent-linux-sandbox",
+      use_linux_sandbox_bwrap: false
+    )
+
+    request.command.should eq(["/tmp/agent-linux-sandbox", "--", "true"])
+    request.arg0.should eq("agent-linux-sandbox")
   end
 
   it "raises when linux sandbox executable is missing" do
@@ -123,7 +139,7 @@ describe Sandbox::Sandboxing do
       )
 
       request.command.first.should eq("/usr/bin/sandbox-exec")
-      request.env[Sandbox::Sandboxing::CODEX_SANDBOX_ENV_VAR]?.should eq("seatbelt")
+      request.env[Sandbox::Sandboxing::SANDBOX_ENV_VAR]?.should eq("seatbelt")
     end
   {% else %}
     it "raises seatbelt unavailable on non-macos hosts" do

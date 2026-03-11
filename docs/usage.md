@@ -26,7 +26,7 @@ request = manager.transform(
   fs_policy,
   net_policy,
   sandbox_type,
-  codex_linux_sandbox_exe: "/usr/local/bin/codex-linux-sandbox",
+  linux_sandbox_exe: "/usr/local/bin/agent-linux-sandbox",
   use_linux_sandbox_bwrap: true
 )
 
@@ -95,7 +95,8 @@ Typical policies:
 ## Platform Notes
 
 - Linux:
-  - Provide `codex_linux_sandbox_exe` when Linux sandbox wrapping is expected.
+  - Provide `linux_sandbox_exe` when Linux sandbox wrapping is expected.
+  - Backward-compatible alias: `codex_linux_sandbox_exe`.
   - `use_linux_sandbox_bwrap` enables bwrap-style wrapping path.
 - macOS:
   - Uses `/usr/bin/sandbox-exec` integration through seatbelt policy generation.

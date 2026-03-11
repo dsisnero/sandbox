@@ -9,6 +9,8 @@ module Sandbox
   module Sandboxing
     CODEX_SANDBOX_ENV_VAR                  = "CODEX_SANDBOX"
     CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR = "CODEX_SANDBOX_NETWORK_DISABLED"
+    SANDBOX_ENV_VAR                        = CODEX_SANDBOX_ENV_VAR
+    SANDBOX_NETWORK_DISABLED_ENV_VAR       = CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR
 
     enum SandboxType
       None
@@ -149,7 +151,7 @@ module Sandbox
 
     class MissingLinuxSandboxExecutableError < SandboxTransformError
       def initialize
-        super("missing codex-linux-sandbox executable path")
+        super("missing linux sandbox executable path")
       end
     end
 
@@ -194,13 +196,14 @@ module Sandbox
         file_system_policy : FileSystemSandboxPolicy,
         network_policy : NetworkSandboxPolicy,
         sandbox : SandboxType,
+        linux_sandbox_exe : String? = nil,
         codex_linux_sandbox_exe : String? = nil,
         use_linux_sandbox_bwrap : Bool = false,
         windows_sandbox_level : WindowsSandboxLevel = WindowsSandboxLevel::Disabled,
       ) : ExecRequest
         env = spec.env.dup
         if network_policy.restricted?
-          env[CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR] = "1"
+          env[SANDBOX_NETWORK_DISABLED_ENV_VAR] = "1"
         end
 
         command = [spec.program] + spec.args
@@ -213,15 +216,15 @@ module Sandbox
           {% if flag?(:darwin) %}
             command = MacosSeatbelt.create_command_args(command, file_system_policy, network_policy)
             command.unshift(MacosSeatbelt::EXECUTABLE)
-            env[CODEX_SANDBOX_ENV_VAR] = "seatbelt"
+            env[SANDBOX_ENV_VAR] = "seatbelt"
           {% else %}
             raise SeatbeltUnavailableError.new
           {% end %}
         in .linux_seccomp?
-          exe = codex_linux_sandbox_exe || raise MissingLinuxSandboxExecutableError.new
+          exe = linux_sandbox_exe || codex_linux_sandbox_exe || raise MissingLinuxSandboxExecutableError.new
           command = LinuxSandbox.create_command_args(command, use_linux_sandbox_bwrap)
           command.unshift(exe)
-          arg0 = "codex-linux-sandbox"
+          arg0 = File.basename(exe)
         in .windows_restricted_token?
           WindowsSandbox.validate_supported_level(windows_sandbox_level)
         end
