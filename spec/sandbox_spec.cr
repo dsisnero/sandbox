@@ -70,6 +70,28 @@ describe Sandbox::Sandboxing do
     request.command.should eq(["echo", "hello"])
   end
 
+  it "supports configurable sandbox env var names" do
+    previous_sandbox = Sandbox::Sandboxing.sandbox_env_var
+    previous_network = Sandbox::Sandboxing.network_disabled_env_var
+    begin
+      Sandbox::Sandboxing.sandbox_env_var = "AGENT_SANDBOX"
+      Sandbox::Sandboxing.network_disabled_env_var = "AGENT_SANDBOX_NET_DISABLED"
+
+      request = manager.transform(
+        Sandbox::Sandboxing::CommandSpec.new(program: "echo", args: ["hello"]),
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.unrestricted,
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        Sandbox::Sandboxing::SandboxType::None
+      )
+
+      request.env["AGENT_SANDBOX_NET_DISABLED"]?.should eq("1")
+      request.env.has_key?(Sandbox::Sandboxing::SANDBOX_NETWORK_DISABLED_ENV_VAR).should be_false
+    ensure
+      Sandbox::Sandboxing.sandbox_env_var = previous_sandbox
+      Sandbox::Sandboxing.network_disabled_env_var = previous_network
+    end
+  end
+
   it "transform with external sandbox and enabled network keeps network enabled env" do
     request = manager.transform(
       Sandbox::Sandboxing::CommandSpec.new(

@@ -73,6 +73,10 @@ Sandbox::Sandboxing::WindowsSandbox.sandbox_home = "/var/lib/my-agent/sandbox-st
 Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group = "AgentSandboxUsers"
 Sandbox::Sandboxing::WindowsSandbox.offline_username = "AgentSandboxOffline"
 Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
+
+# Optional: customize sandbox signaling env var names.
+Sandbox::Sandboxing.sandbox_env_var = "AGENT_SANDBOX"
+Sandbox::Sandboxing.network_disabled_env_var = "AGENT_SANDBOX_NET_DISABLED"
 ```
 
 ### What The Example Is Doing

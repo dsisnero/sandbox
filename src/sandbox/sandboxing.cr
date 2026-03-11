@@ -11,6 +11,8 @@ module Sandbox
     CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR = "CODEX_SANDBOX_NETWORK_DISABLED"
     SANDBOX_ENV_VAR                        = CODEX_SANDBOX_ENV_VAR
     SANDBOX_NETWORK_DISABLED_ENV_VAR       = CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR
+    @@sandbox_env_var_override : String? = nil
+    @@network_disabled_env_var_override : String? = nil
 
     enum SandboxType
       None
@@ -203,7 +205,7 @@ module Sandbox
       ) : ExecRequest
         env = spec.env.dup
         if network_policy.restricted?
-          env[SANDBOX_NETWORK_DISABLED_ENV_VAR] = "1"
+          env[Sandboxing.network_disabled_env_var] = "1"
         end
 
         command = [spec.program] + spec.args
@@ -216,7 +218,7 @@ module Sandbox
           {% if flag?(:darwin) %}
             command = MacosSeatbelt.create_command_args(command, file_system_policy, network_policy)
             command.unshift(MacosSeatbelt::EXECUTABLE)
-            env[SANDBOX_ENV_VAR] = "seatbelt"
+            env[Sandboxing.sandbox_env_var] = "seatbelt"
           {% else %}
             raise SeatbeltUnavailableError.new
           {% end %}
@@ -261,6 +263,24 @@ module Sandbox
 
     def self.new : SandboxManager
       SandboxManager.new
+    end
+
+    def self.sandbox_env_var : String
+      @@sandbox_env_var_override || SANDBOX_ENV_VAR
+    end
+
+    def self.sandbox_env_var=(value : String) : String
+      @@sandbox_env_var_override = value
+      value
+    end
+
+    def self.network_disabled_env_var : String
+      @@network_disabled_env_var_override || SANDBOX_NETWORK_DISABLED_ENV_VAR
+    end
+
+    def self.network_disabled_env_var=(value : String) : String
+      @@network_disabled_env_var_override = value
+      value
     end
 
     def self.default_platform_sandbox(windows_sandbox_level : WindowsSandboxLevel) : SandboxType
