@@ -133,6 +133,7 @@ Use the `Makefile` commands:
 - `make format`
 - `make lint`
 - `make test`
+- `make parity`
 - `make clean`
 
 Equivalent checks:

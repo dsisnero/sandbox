@@ -38,6 +38,7 @@ Upstream revision: `24b8d443b82aad9f336b9c379aebbeab8667466a`
   - `make format`
   - `make lint`
   - `make test`
+  - `make parity`
 
 ## Next Porting Steps
 

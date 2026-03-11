@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 CRYSTAL_CACHE_DIR ?= $(PWD)/.crystal-cache
 
-.PHONY: install update format lint test clean
+.PHONY: install update format lint test parity clean
 
 install:
 	shards install
@@ -17,6 +17,9 @@ lint:
 
 test:
 	CRYSTAL_CACHE_DIR=$(CRYSTAL_CACHE_DIR) crystal spec
+
+parity:
+	./scripts/check_inventory_clean.sh
 
 clean:
 	rm -rf .crystal-cache
