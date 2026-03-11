@@ -3,6 +3,26 @@
 Library version: `v0.7.0`
 Release notes: [CHANGELOG.md](../CHANGELOG.md)
 
+## Table of Contents
+
+- [Purpose](#purpose)
+- [What Your Agent Must Provide](#what-your-agent-must-provide)
+- [Quick Start](#quick-start)
+- [Planning Flow](#planning-flow)
+- [Execution Flow Diagram](#execution-flow-diagram)
+- [Approval And Elevation Decision Point](#approval-and-elevation-decision-point)
+- [What `CommandSpec` Is](#what-commandspec-is)
+- [Type Ownership](#type-ownership)
+- [Transform Inputs And Outputs](#transform-inputs-and-outputs)
+- [Handling Restricted Actions](#handling-restricted-actions)
+- [Policy Selection](#policy-selection)
+- [Path-Scoped Filesystem Restrictions](#path-scoped-filesystem-restrictions)
+- [Limited Network Behavior](#limited-network-behavior)
+- [Platform Integration Notes](#platform-integration-notes)
+- [Advanced Policy Patterns](#advanced-policy-patterns)
+- [Optional Global Configuration](#optional-global-configuration)
+- [Minimal Runner Contract](#minimal-runner-contract)
+
 ## Purpose
 
 Use this library to plan sandboxed command execution for a Crystal agent runtime.
@@ -198,6 +218,13 @@ Typical outcomes:
 
 - Restricted FS + restricted network in `Auto`: usually sandboxed backend.
 - Unrestricted FS + enabled network in `Auto`: often `SandboxType::None`.
+
+## Advanced Policy Patterns
+
+For concrete path-scoped filesystem and limited-network patterns grounded in
+upstream Rust behavior, see:
+
+- [Policy Patterns](policy-patterns.md)
 
 ## Platform Integration Notes
 

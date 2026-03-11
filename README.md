@@ -42,6 +42,7 @@ require "sandbox"
 Use the full guide:
 
 - [Usage Guide](docs/usage.md)
+- [Policy Patterns](docs/policy-patterns.md)
 - [Architecture](docs/architecture.md)
 
 ## Project Layout
@@ -55,6 +56,7 @@ Use the full guide:
 ## Documentation
 
 - [Usage Guide](docs/usage.md)
+- [Policy Patterns](docs/policy-patterns.md)
 - [Architecture](docs/architecture.md)
 - [Development](docs/development.md)
 - [Testing](docs/testing.md)
