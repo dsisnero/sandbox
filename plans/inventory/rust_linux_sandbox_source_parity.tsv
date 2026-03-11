@@ -1,4 +1,4 @@
 # source_api_id	status	crystal_refs	notes
-src/lib.rs::func::run_main	ported	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox run_main parity ported
-src/linux_run_main.rs::func::run_main	ported	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	linux run_main parity ported
-src/linux_run_main.rs::struct::LandlockCommand	ported	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	linux run_main command model parity ported
+src/lib.rs::func::run_main	mapped	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox run_main parity ported
+src/linux_run_main.rs::func::run_main	mapped	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	linux run_main parity ported
+src/linux_run_main.rs::struct::LandlockCommand	mapped	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	linux run_main command model parity ported

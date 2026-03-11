@@ -1,93 +1,93 @@
 # source_api_id	status	crystal_refs	notes
-src/acl.rs::func::path_mask_allows	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows path mask helper parity ported
-src/allow.rs::func::compute_allow_paths	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
-src/allow.rs::struct::AllowDenyPaths	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
-src/audit.rs::func::apply_capability_denies_for_world_writable	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit parity ported
-src/audit.rs::func::apply_world_writable_scan_and_denies	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit scan/apply orchestration parity ported
-src/audit.rs::func::audit_everyone_writable	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit world-writable scan parity ported
-src/cap.rs::func::cap_sid_file	ported	src/sandbox/sandboxing/windows_sandbox.cr	windows cap sid persistence parity ported
-src/cap.rs::func::load_or_create_cap_sids	ported	src/sandbox/sandboxing/windows_sandbox.cr	windows cap sid persistence parity ported
-src/cap.rs::func::workspace_cap_sid_for_cwd	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows workspace capability sid keying parity ported
-src/cap.rs::struct::CapSids	ported	src/sandbox/sandboxing/windows_sandbox.cr	windows cap sid persistence parity ported
-src/command_runner_win.rs::func::main	ported	src/sandbox/sandboxing/windows_sandbox.cr	windows command runner helper parity ported
-src/cwd_junction.rs::func::create_cwd_junction	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows cwd junction parity ported
-src/dpapi.rs::func::protect	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows dpapi parity ported
-src/dpapi.rs::func::unprotect	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows dpapi parity ported
-src/elevated_impl.rs::func::run_windows_sandbox_capture	ported	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture parity ported
-src/elevated_impl.rs::struct::CaptureResult	ported	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture result parity ported
-src/env.rs::func::apply_no_network_to_env	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
-src/env.rs::func::ensure_non_interactive_pager	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
-src/env.rs::func::inherit_path_env	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
-src/env.rs::func::normalize_null_device_env	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
-src/firewall.rs::func::ensure_offline_outbound_block	ported	src/sandbox/sandboxing/windows_sandbox.cr	windows firewall helper parity ported
-src/helper_materialization.rs::func::resolve_current_exe_for_launch	ported	src/sandbox/sandboxing/windows_sandbox.cr	windows helper materialization parity ported
-src/hide_users.rs::func::hide_current_user_profile_dir	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows user profile hiding parity ported (metadata-backed fallback)
-src/hide_users.rs::func::hide_newly_created_users	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows user hiding parity ported (metadata-backed fallback)
-src/identity.rs::func::require_logon_sandbox_creds	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox identity parity ported
-src/identity.rs::func::sandbox_setup_is_complete	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox identity parity ported
-src/identity.rs::struct::SandboxCreds	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox identity parity ported
-src/lib.rs::func::apply_world_writable_scan_and_denies	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit helper parity ported
-src/lib.rs::func::run_windows_sandbox_capture	ported	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture parity ported
-src/lib.rs::func::run_windows_sandbox_legacy_preflight	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
-src/lib.rs::struct::CaptureResult	ported	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture result parity ported
-src/logging.rs::const::LOG_FILE_NAME	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
-src/logging.rs::func::debug_log	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported (Crystal Log + sandbox.log append)
-src/logging.rs::func::log_failure	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
-src/logging.rs::func::log_note	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported (Crystal Log + sandbox.log append)
-src/logging.rs::func::log_start	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
-src/logging.rs::func::log_success	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
-src/path_normalization.rs::func::canonical_path_key	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows path normalization parity ported
-src/path_normalization.rs::func::canonicalize_path	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows path normalization parity ported
-src/policy.rs::func::parse_policy	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy parsing parity ported
-src/process.rs::func::make_env_block	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows process env block parity ported
-src/read_acl_mutex.rs::func::acquire_read_acl_mutex	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows read-acl mutex parity ported
-src/read_acl_mutex.rs::func::read_acl_mutex_exists	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows read-acl mutex parity ported
-src/read_acl_mutex.rs::struct::ReadAclMutexGuard	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows read-acl mutex parity ported
-src/sandbox_users.rs::const::SANDBOX_USERS_GROUP	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::ensure_local_group	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::ensure_local_group_member	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::ensure_local_user	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::ensure_sandbox_user	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::ensure_sandbox_users_group	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::provision_sandbox_users	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::resolve_sandbox_users_group_sid	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::resolve_sid	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/sandbox_users.rs::func::sid_bytes_to_psid	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
-src/setup_error.rs::enum::SetupErrorCode	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error code parity ported (expanded variant coverage)
-src/setup_error.rs::func::as_str	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error code string parity ported
-src/setup_error.rs::func::clear_setup_error_report	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report lifecycle parity ported
-src/setup_error.rs::func::extract_failure	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure extraction parity ported
-src/setup_error.rs::func::failure	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure constructor parity ported
-src/setup_error.rs::func::from_report	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report mapping parity ported
-src/setup_error.rs::func::metric_message	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup metric message parity ported
-src/setup_error.rs::func::new	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure constructor parity ported
-src/setup_error.rs::func::read_setup_error_report	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report lifecycle parity ported
-src/setup_error.rs::func::sanitize_setup_metric_tag_value	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error sanitization parity ported
-src/setup_error.rs::func::setup_error_path	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error path parity ported
-src/setup_error.rs::func::write_setup_error_report	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report lifecycle parity ported
-src/setup_error.rs::method::SetupErrorCode.as_str	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error code string parity ported
-src/setup_error.rs::method::SetupFailure.new	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure constructor parity ported
-src/setup_error.rs::struct::SetupErrorReport	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report parity ported
-src/setup_error.rs::struct::SetupFailure	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure model parity ported
-src/setup_main_win.rs::func::main	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup main parity ported
-src/setup_orchestrator.rs::const::OFFLINE_USERNAME	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator constant parity ported
-src/setup_orchestrator.rs::const::ONLINE_USERNAME	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator constant parity ported
-src/setup_orchestrator.rs::const::SETUP_VERSION	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator constant parity ported
-src/setup_orchestrator.rs::func::run_elevated_setup	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator parity ported
-src/setup_orchestrator.rs::func::run_setup_refresh	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator refresh parity ported
-src/setup_orchestrator.rs::func::run_setup_refresh_with_extra_read_roots	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator parity ported
-src/setup_orchestrator.rs::func::sandbox_bin_dir	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
-src/setup_orchestrator.rs::func::sandbox_dir	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
-src/setup_orchestrator.rs::func::sandbox_secrets_dir	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
-src/setup_orchestrator.rs::func::sandbox_users_path	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
-src/setup_orchestrator.rs::func::setup_marker_path	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
-src/setup_orchestrator.rs::func::version_matches	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator version parity ported
-src/setup_orchestrator.rs::method::SandboxUsersFile.version_matches	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator version parity ported
-src/setup_orchestrator.rs::method::SetupMarker.version_matches	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator version parity ported
-src/setup_orchestrator.rs::struct::SandboxUserRecord	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator model parity ported
-src/setup_orchestrator.rs::struct::SandboxUsersFile	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator model parity ported
-src/setup_orchestrator.rs::struct::SetupMarker	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator model parity ported
-src/winutil.rs::func::format_last_error	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows winutil parity ported
-src/winutil.rs::func::quote_windows_arg	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows winutil parity ported
-src/winutil.rs::func::string_from_sid_bytes	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows winutil parity ported
-src/workspace_acl.rs::func::is_command_cwd_root	ported	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	auto-generated
+src/acl.rs::func::path_mask_allows	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows path mask helper parity ported
+src/allow.rs::func::compute_allow_paths	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/allow.rs::struct::AllowDenyPaths	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows allow/deny path parity ported
+src/audit.rs::func::apply_capability_denies_for_world_writable	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit parity ported
+src/audit.rs::func::apply_world_writable_scan_and_denies	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit scan/apply orchestration parity ported
+src/audit.rs::func::audit_everyone_writable	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit world-writable scan parity ported
+src/cap.rs::func::cap_sid_file	mapped	src/sandbox/sandboxing/windows_sandbox.cr	windows cap sid persistence parity ported
+src/cap.rs::func::load_or_create_cap_sids	mapped	src/sandbox/sandboxing/windows_sandbox.cr	windows cap sid persistence parity ported
+src/cap.rs::func::workspace_cap_sid_for_cwd	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows workspace capability sid keying parity ported
+src/cap.rs::struct::CapSids	mapped	src/sandbox/sandboxing/windows_sandbox.cr	windows cap sid persistence parity ported
+src/command_runner_win.rs::func::main	mapped	src/sandbox/sandboxing/windows_sandbox.cr	windows command runner helper parity ported
+src/cwd_junction.rs::func::create_cwd_junction	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows cwd junction parity ported
+src/dpapi.rs::func::protect	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows dpapi parity ported
+src/dpapi.rs::func::unprotect	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows dpapi parity ported
+src/elevated_impl.rs::func::run_windows_sandbox_capture	mapped	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture parity ported
+src/elevated_impl.rs::struct::CaptureResult	mapped	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture result parity ported
+src/env.rs::func::apply_no_network_to_env	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
+src/env.rs::func::ensure_non_interactive_pager	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
+src/env.rs::func::inherit_path_env	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
+src/env.rs::func::normalize_null_device_env	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows env helper parity ported
+src/firewall.rs::func::ensure_offline_outbound_block	mapped	src/sandbox/sandboxing/windows_sandbox.cr	windows firewall helper parity ported
+src/helper_materialization.rs::func::resolve_current_exe_for_launch	mapped	src/sandbox/sandboxing/windows_sandbox.cr	windows helper materialization parity ported
+src/hide_users.rs::func::hide_current_user_profile_dir	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows user profile hiding parity ported (metadata-backed fallback)
+src/hide_users.rs::func::hide_newly_created_users	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows user hiding parity ported (metadata-backed fallback)
+src/identity.rs::func::require_logon_sandbox_creds	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox identity parity ported
+src/identity.rs::func::sandbox_setup_is_complete	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox identity parity ported
+src/identity.rs::struct::SandboxCreds	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox identity parity ported
+src/lib.rs::func::apply_world_writable_scan_and_denies	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows audit helper parity ported
+src/lib.rs::func::run_windows_sandbox_capture	mapped	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture parity ported
+src/lib.rs::func::run_windows_sandbox_legacy_preflight	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy/preflight parity ported
+src/lib.rs::struct::CaptureResult	mapped	src/sandbox/sandboxing.cr;src/sandbox/sandboxing/linux_sandbox.cr;src/sandbox/sandboxing/windows_sandbox.cr;src/sandbox/sandboxing/macos_seatbelt.cr;spec/sandbox_spec.cr	sandbox capture result parity ported
+src/logging.rs::const::LOG_FILE_NAME	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
+src/logging.rs::func::debug_log	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported (Crystal Log + sandbox.log append)
+src/logging.rs::func::log_failure	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
+src/logging.rs::func::log_note	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported (Crystal Log + sandbox.log append)
+src/logging.rs::func::log_start	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
+src/logging.rs::func::log_success	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows logging helper parity ported
+src/path_normalization.rs::func::canonical_path_key	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows path normalization parity ported
+src/path_normalization.rs::func::canonicalize_path	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows path normalization parity ported
+src/policy.rs::func::parse_policy	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows policy parsing parity ported
+src/process.rs::func::make_env_block	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows process env block parity ported
+src/read_acl_mutex.rs::func::acquire_read_acl_mutex	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows read-acl mutex parity ported
+src/read_acl_mutex.rs::func::read_acl_mutex_exists	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows read-acl mutex parity ported
+src/read_acl_mutex.rs::struct::ReadAclMutexGuard	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows read-acl mutex parity ported
+src/sandbox_users.rs::const::SANDBOX_USERS_GROUP	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::ensure_local_group	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::ensure_local_group_member	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::ensure_local_user	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::ensure_sandbox_user	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::ensure_sandbox_users_group	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::provision_sandbox_users	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::resolve_sandbox_users_group_sid	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::resolve_sid	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/sandbox_users.rs::func::sid_bytes_to_psid	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows sandbox users parity ported
+src/setup_error.rs::enum::SetupErrorCode	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error code parity ported (expanded variant coverage)
+src/setup_error.rs::func::as_str	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error code string parity ported
+src/setup_error.rs::func::clear_setup_error_report	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report lifecycle parity ported
+src/setup_error.rs::func::extract_failure	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure extraction parity ported
+src/setup_error.rs::func::failure	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure constructor parity ported
+src/setup_error.rs::func::from_report	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report mapping parity ported
+src/setup_error.rs::func::metric_message	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup metric message parity ported
+src/setup_error.rs::func::new	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure constructor parity ported
+src/setup_error.rs::func::read_setup_error_report	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report lifecycle parity ported
+src/setup_error.rs::func::sanitize_setup_metric_tag_value	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error sanitization parity ported
+src/setup_error.rs::func::setup_error_path	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error path parity ported
+src/setup_error.rs::func::write_setup_error_report	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report lifecycle parity ported
+src/setup_error.rs::method::SetupErrorCode.as_str	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error code string parity ported
+src/setup_error.rs::method::SetupFailure.new	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure constructor parity ported
+src/setup_error.rs::struct::SetupErrorReport	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup error report parity ported
+src/setup_error.rs::struct::SetupFailure	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup failure model parity ported
+src/setup_main_win.rs::func::main	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup main parity ported
+src/setup_orchestrator.rs::const::OFFLINE_USERNAME	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator constant parity ported
+src/setup_orchestrator.rs::const::ONLINE_USERNAME	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator constant parity ported
+src/setup_orchestrator.rs::const::SETUP_VERSION	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator constant parity ported
+src/setup_orchestrator.rs::func::run_elevated_setup	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator parity ported
+src/setup_orchestrator.rs::func::run_setup_refresh	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator refresh parity ported
+src/setup_orchestrator.rs::func::run_setup_refresh_with_extra_read_roots	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator parity ported
+src/setup_orchestrator.rs::func::sandbox_bin_dir	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
+src/setup_orchestrator.rs::func::sandbox_dir	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
+src/setup_orchestrator.rs::func::sandbox_secrets_dir	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
+src/setup_orchestrator.rs::func::sandbox_users_path	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
+src/setup_orchestrator.rs::func::setup_marker_path	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator path parity ported
+src/setup_orchestrator.rs::func::version_matches	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator version parity ported
+src/setup_orchestrator.rs::method::SandboxUsersFile.version_matches	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator version parity ported
+src/setup_orchestrator.rs::method::SetupMarker.version_matches	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator version parity ported
+src/setup_orchestrator.rs::struct::SandboxUserRecord	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator model parity ported
+src/setup_orchestrator.rs::struct::SandboxUsersFile	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator model parity ported
+src/setup_orchestrator.rs::struct::SetupMarker	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows setup orchestrator model parity ported
+src/winutil.rs::func::format_last_error	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows winutil parity ported
+src/winutil.rs::func::quote_windows_arg	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows winutil parity ported
+src/winutil.rs::func::string_from_sid_bytes	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	windows winutil parity ported
+src/workspace_acl.rs::func::is_command_cwd_root	mapped	src/sandbox/sandboxing/windows_sandbox.cr;spec/sandbox_spec.cr	auto-generated
