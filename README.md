@@ -113,6 +113,7 @@ For deeper API docs and additional examples, see [docs/usage.md](/Users/dominic/
 - Seatbelt/core sandbox port inventory: `missing=0`, `in_progress=0`, `partial=0`
 - Windows sandbox port inventory: `missing=0`, `in_progress=0`, `partial=0`
 - Linux/Windows/Seatbelt test parity inventories: `missing=0`, `in_progress=0`, `partial=0`
+- Linux/Windows/Seatbelt source parity inventories: `missing=0`, `in_progress=0`, `partial=0`
 
 ## Quality Gates
 
