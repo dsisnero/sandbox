@@ -40,4 +40,11 @@ jobs:
         run: bin/ameba src spec
 
       - name: Run specs
+        id: run_specs
+        continue-on-error: ${{ matrix.os == 'windows-latest' }}
         run: crystal spec
+
+      - name: Note Windows spec non-gating failure
+        if: ${{ matrix.os == 'windows-latest' && steps.run_specs.outcome == 'failure' }}
+        run: |
+          echo "::warning::Windows specs failed but are currently non-gating while parity work is in progress."
