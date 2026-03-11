@@ -656,7 +656,7 @@ module Sandbox
         deny = Set(String).new
 
         add_writable_root = ->(root : String) do
-          candidate = Path[root].absolute? ? root : File.join(policy_cwd, root)
+          candidate = absolute_path_like?(root) ? root : File.join(policy_cwd, root)
           canonical = canonicalize_path(candidate)
           if path_exists?(canonical)
             allow.add(canonical)
@@ -1413,6 +1413,11 @@ module Sandbox
         File.exists?(path) || Dir.exists?(path)
       end
 
+      private def self.absolute_path_like?(path : String) : Bool
+        return true if Path[path].absolute?
+        path.starts_with?("/") || path.matches?(/^[a-zA-Z]:[\\\/]/)
+      end
+
       private def self.windows_insecure_fallback_enabled? : Bool
         ENV[WINDOWS_INSECURE_FALLBACK_ENV]? == "1"
       end
@@ -1475,7 +1480,7 @@ module Sandbox
         home_dir : String,
       ) : Array(String)?
         if read_roots_override
-          return read_roots_override.select { |root| path_exists?(root) }
+          return stable_path_list(read_roots_override)
         end
         return unless policy.kind.workspace_write?
 
@@ -1491,7 +1496,7 @@ module Sandbox
         env_map : Hash(String, String),
       ) : Array(String)?
         if write_roots_override
-          return write_roots_override.select { |root| path_exists?(root) }
+          return stable_path_list(write_roots_override)
         end
         return unless policy.kind.workspace_write?
 

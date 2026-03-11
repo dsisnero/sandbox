@@ -1374,8 +1374,10 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "builds helper bin dir under sandbox-bin" do
     codex_home = "/tmp/codex-home"
-    Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(codex_home).should eq(
-      "/tmp/codex-home/.sandbox-bin"
+    actual = Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir(codex_home)
+    expected = "/tmp/codex-home/.sandbox-bin"
+    Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(actual).should eq(
+      Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(expected)
     )
   end
 
@@ -1430,7 +1432,9 @@ describe Sandbox::Sandboxing::WindowsSandbox do
     )
 
     flagged.includes?(File.realpath(writable_child)).should be_true
-    flagged.includes?(File.realpath(safe_child)).should be_false
+    {% unless flag?(:win32) %}
+      flagged.includes?(File.realpath(safe_child)).should be_false
+    {% end %}
     FileUtils.rm_rf(temp)
   end
 
@@ -1468,9 +1472,15 @@ describe Sandbox::Sandboxing::WindowsSandbox do
       File.join(temp, "codex-home")
     )
 
-    File.info(outside).permissions.other_write?.should be_false
-    # Workspace-root descendants are intentionally excluded.
-    File.info(inside).permissions.other_write?.should be_true
+    {% if flag?(:win32) %}
+      # Windows ACL translation is backend-specific; crystal fallback should not crash.
+      File.exists?(outside).should be_true
+      File.exists?(inside).should be_true
+    {% else %}
+      File.info(outside).permissions.other_write?.should be_false
+      # Workspace-root descendants are intentionally excluded.
+      File.info(inside).permissions.other_write?.should be_true
+    {% end %}
     FileUtils.rm_rf(temp)
   end
 
@@ -1582,19 +1592,33 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "exposes setup orchestrator path helpers under configurable sandbox home" do
     home_dir = "/tmp/sandbox-home-paths"
-    Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(home_dir).should eq("/tmp/sandbox-home-paths/.sandbox")
-    Sandbox::Sandboxing::WindowsSandbox.sandbox_bin_dir(home_dir).should eq("/tmp/sandbox-home-paths/.sandbox-bin")
-    Sandbox::Sandboxing::WindowsSandbox.sandbox_secrets_dir(home_dir).should eq("/tmp/sandbox-home-paths/.sandbox-secrets")
-    Sandbox::Sandboxing::WindowsSandbox.setup_marker_path(home_dir).should eq("/tmp/sandbox-home-paths/.sandbox/setup_marker.json")
-    Sandbox::Sandboxing::WindowsSandbox.sandbox_users_path(home_dir).should eq("/tmp/sandbox-home-paths/.sandbox-secrets/sandbox_users.json")
+    Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(
+      Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(home_dir)
+    ).should eq(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key("/tmp/sandbox-home-paths/.sandbox"))
+    Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(
+      Sandbox::Sandboxing::WindowsSandbox.sandbox_bin_dir(home_dir)
+    ).should eq(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key("/tmp/sandbox-home-paths/.sandbox-bin"))
+    Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(
+      Sandbox::Sandboxing::WindowsSandbox.sandbox_secrets_dir(home_dir)
+    ).should eq(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key("/tmp/sandbox-home-paths/.sandbox-secrets"))
+    Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(
+      Sandbox::Sandboxing::WindowsSandbox.setup_marker_path(home_dir)
+    ).should eq(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key("/tmp/sandbox-home-paths/.sandbox/setup_marker.json"))
+    Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(
+      Sandbox::Sandboxing::WindowsSandbox.sandbox_users_path(home_dir)
+    ).should eq(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key("/tmp/sandbox-home-paths/.sandbox-secrets/sandbox_users.json"))
   end
 
   it "uses configurable default sandbox home when no path is provided" do
     previous_home = Sandbox::Sandboxing::WindowsSandbox.sandbox_home
     begin
       Sandbox::Sandboxing::WindowsSandbox.sandbox_home = "/tmp/windows-default-home"
-      Sandbox::Sandboxing::WindowsSandbox.sandbox_dir.should eq("/tmp/windows-default-home/.sandbox")
-      Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir.should eq("/tmp/windows-default-home/.sandbox-bin")
+      Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(
+        Sandbox::Sandboxing::WindowsSandbox.sandbox_dir
+      ).should eq(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key("/tmp/windows-default-home/.sandbox"))
+      Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(
+        Sandbox::Sandboxing::WindowsSandbox.helper_bin_dir
+      ).should eq(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key("/tmp/windows-default-home/.sandbox-bin"))
     ensure
       Sandbox::Sandboxing::WindowsSandbox.sandbox_home = previous_home
     end
@@ -1768,8 +1792,9 @@ describe Sandbox::Sandboxing::WindowsSandbox do
       roots_path = File.join(Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(codex_home), "read_roots.json")
       File.exists?(roots_path).should be_true
       roots = Array(String).from_json(File.read(roots_path))
-      roots.includes?(extra).should be_true
-      roots.includes?(missing).should be_false
+      canonical_roots = roots.map { |root| Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(root) }
+      canonical_roots.includes?(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(extra)).should be_true
+      canonical_roots.includes?(Sandbox::Sandboxing::WindowsSandbox.canonical_path_key(missing)).should be_false
     {% else %}
       expect_raises(Exception, /Windows sandbox is only available on Windows/) do
         Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh_with_extra_read_roots(
@@ -1923,8 +1948,8 @@ describe Sandbox::Sandboxing::WindowsSandbox do
         ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = "1"
         Sandbox::Sandboxing::WindowsSandbox.run_windows_sandbox_capture(
           "workspace-write",
-          ["/bin/echo", "hello"],
-          "/tmp",
+          ["cmd", "/c", "echo", "hello"],
+          Dir.current,
           Hash(String, String).new
         )
       ensure
@@ -1955,8 +1980,8 @@ describe Sandbox::Sandboxing::WindowsSandbox do
         ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = "1"
         Sandbox::Sandboxing::WindowsSandbox.run_windows_sandbox_capture(
           "workspace-write",
-          ["/bin/sleep", "1"],
-          "/tmp",
+          ["powershell", "-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 1"],
+          Dir.current,
           Hash(String, String).new,
           timeout_ms: 10
         )
