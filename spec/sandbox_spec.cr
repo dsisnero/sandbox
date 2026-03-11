@@ -905,7 +905,7 @@ end
         )
         inner = Sandbox::Sandboxing::LinuxSandbox.run_main(
           cmd,
-          Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
+          Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted,
           Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled
         )
         inner.first.should eq("agent-linux-sandbox")
