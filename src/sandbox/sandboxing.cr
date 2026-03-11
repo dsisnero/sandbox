@@ -107,6 +107,7 @@ module Sandbox
       getter args : Array(String)
       getter cwd : String
       getter env : Hash(String, String)
+      getter expiration : Int64?
       getter sandbox_permissions : String
       getter justification : String?
 
@@ -115,6 +116,7 @@ module Sandbox
         @args : Array(String) = [] of String,
         @cwd : String = Dir.current,
         @env : Hash(String, String) = Hash(String, String).new,
+        @expiration : Int64? = nil,
         @sandbox_permissions : String = "use_default",
         @justification : String? = nil,
       )
@@ -125,6 +127,7 @@ module Sandbox
       getter command : Array(String)
       getter cwd : String
       getter env : Hash(String, String)
+      getter expiration : Int64?
       getter sandbox : SandboxType
       getter windows_sandbox_level : WindowsSandboxLevel
       getter sandbox_permissions : String
@@ -144,6 +147,7 @@ module Sandbox
         @network_sandbox_policy : NetworkSandboxPolicy,
         @justification : String? = nil,
         @arg0 : String? = nil,
+        @expiration : Int64? = nil,
       )
       end
     end
@@ -235,6 +239,7 @@ module Sandbox
           command: command,
           cwd: spec.cwd,
           env: env,
+          expiration: spec.expiration,
           sandbox: sandbox,
           windows_sandbox_level: windows_sandbox_level,
           sandbox_permissions: spec.sandbox_permissions,

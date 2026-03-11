@@ -15,7 +15,7 @@ The library does not run your subprocess for you.
 
 Your agent/orchestrator is responsible for:
 
-- Building `CommandSpec` from tool call intent (`program`, `args`, `cwd`, `env`, expiration, permissions).
+- Building `CommandSpec` from tool call intent (`program`, `args`, `cwd`, `env`, permissions, justification).
 - Selecting policies (`FileSystemSandboxPolicy`, `NetworkSandboxPolicy`, preference, Windows sandbox level).
 - Supplying platform-specific executable/runtime inputs:
   - Linux: `linux_sandbox_exe` when using `SandboxType::LinuxSeccomp`.
@@ -59,10 +59,91 @@ request = manager.transform(
 ## Planning Flow
 
 1. Build `CommandSpec` from user/tool intent.
-2. Compute `sandbox_type` via `select_initial(...)`.
-3. Call `transform(...)` to produce `ExecRequest`.
-4. Execute `ExecRequest` with your own runner.
-5. Use `denied(...)` + exit code/stderr to classify policy denials.
+2. Set `sandbox_permissions` intent (`"use_default"`, `"with_additional_permissions"`, or `"require_escalated"`).
+3. Compute `sandbox_type` via `select_initial(...)`.
+4. Call `transform(...)` to produce `ExecRequest`.
+5. Apply your own approval/policy decision for sandbox override or escalation.
+6. Execute the approved request with your own runner.
+7. Use `denied(...)` + exit code/stderr to classify policy denials.
+
+## Execution Flow Diagram
+
+```mermaid
+flowchart TD
+  A["Agent receives tool/run request"] --> B["Build CommandSpec plus sandbox policies"]
+  B --> C["Set sandbox_permissions intent"]
+  C --> D["select_initial chooses sandbox backend"]
+  D --> E["transform returns ExecRequest"]
+  E --> F{"Agent approval and policy layer"}
+  F -->|deny| G["Return rejected result"]
+  F -->|allow| H{"Execution mode"}
+  H -->|default or additional permissions| I["Run with sandboxed ExecRequest"]
+  H -->|require escalated| J["Run unsandboxed or host-elevated path"]
+  I --> K["Capture exit code stdout stderr"]
+  J --> K
+  K --> L["Classify denied with manager.denied and return structured result"]
+```
+
+## Approval And Elevation Decision Point
+
+After `transform(...)`, your agent policy layer should decide whether to run:
+
+- Sandboxed (`ExecRequest` as produced).
+- Sandboxed with additional scoped permissions.
+- Unsandboxed/host-elevated (when requested and approved).
+
+This decision is runtime-specific and intentionally outside this library.
+
+## What `CommandSpec` Is
+
+`CommandSpec` is the pre-sandbox command intent for a single tool/process
+execution request. Your agent builds this first, then passes it to
+`manager.transform(...)`.
+
+Fields:
+
+- `program` (`String`): executable name/path to invoke.
+- `args` (`Array(String)`): argv values after `program`.
+- `cwd` (`String`): working directory for execution.
+- `env` (`Hash(String, String)`): environment variables for the process.
+- `expiration` (`Int64?`): optional runtime timeout/expiration hint (milliseconds).
+- `sandbox_permissions` (`String`): sandbox mode hint (default: `"use_default"`).
+- `justification` (`String?`): optional reason text for elevated actions.
+
+Expected `sandbox_permissions` values your agent policy layer should interpret:
+
+- `"use_default"`: run with turn/session sandbox defaults.
+- `"with_additional_permissions"`: stay sandboxed but widen scoped permissions for this command.
+- `"require_escalated"`: request unsandboxed or host-elevated execution path.
+
+This library passes the value through into `ExecRequest`. Approval, prompting, and
+final elevated execution decisions are handled by your agent runtime/policy layer.
+
+Example:
+
+```crystal
+spec = Sandbox::Sandboxing::CommandSpec.new(
+  program: "echo",
+  args: ["hello"],
+  cwd: "/tmp",
+  env: {"LANG" => "C"},
+  expiration: 30_000_i64,
+  sandbox_permissions: "use_default",
+  justification: nil
+)
+```
+
+## Type Ownership
+
+The library defines both `CommandSpec` and `ExecRequest`.
+
+- You provide `CommandSpec` as input to `manager.transform(...)`.
+- The library returns `ExecRequest` from `manager.transform(...)`.
+
+Definitions:
+
+- [CommandSpec](/Users/dominic/repos/github.com/dsisnero/sandbox/src/sandbox/sandboxing.cr)
+- [ExecRequest](/Users/dominic/repos/github.com/dsisnero/sandbox/src/sandbox/sandboxing.cr)
 
 ## Transform Inputs And Outputs
 
@@ -77,6 +158,7 @@ request = manager.transform(
 - `request.command`: fully wrapped argv (if sandbox enabled).
 - `request.env`: env including policy-driven entries.
 - `request.cwd`: working directory for spawn.
+- `request.expiration`: optional expiration/timeout hint propagated from `CommandSpec`.
 - `request.arg0`: optional argv0 override metadata.
 
 `transform(...)` is a planning step and generally returns an `ExecRequest` even if

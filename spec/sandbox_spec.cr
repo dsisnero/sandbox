@@ -70,6 +70,21 @@ describe Sandbox::Sandboxing do
     request.command.should eq(["echo", "hello"])
   end
 
+  it "propagates optional expiration from CommandSpec to ExecRequest" do
+    request = manager.transform(
+      Sandbox::Sandboxing::CommandSpec.new(
+        program: "echo",
+        args: ["hello"],
+        expiration: 30_000_i64
+      ),
+      Sandbox::Sandboxing::FileSystemSandboxPolicy.unrestricted,
+      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+      Sandbox::Sandboxing::SandboxType::None
+    )
+
+    request.expiration.should eq(30_000_i64)
+  end
+
   it "supports configurable sandbox env var names" do
     previous_sandbox = Sandbox::Sandboxing.sandbox_env_var
     previous_network = Sandbox::Sandboxing.network_disabled_env_var
