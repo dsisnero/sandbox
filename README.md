@@ -10,6 +10,9 @@ Originally ported from sandbox code in [openai/codex](https://github.com/openai/
 
 The upstream Codex source is historical porting input, not an application constraint for this library.
 
+Current release: `v0.7.0`
+Changelog: [CHANGELOG.md](/Users/dominic/repos/github.com/dsisnero/sandbox/CHANGELOG.md)
+
 ## What This Library Does
 
 This shard provides a sandbox-policy planning and command-transformation layer for
@@ -134,11 +137,18 @@ Use the `Makefile` commands:
 - `make lint`
 - `make test`
 - `make parity`
+- `make parity-verify`
 - `make clean`
 
 `make parity` runs:
 - inventory status cleanliness checks
 - canonical split Rust parity drift checks (linux/windows/seatbelt source + test + port inventories)
+
+`make parity-verify` runs:
+- `make parity` checks
+- inventory TSV shape/quality checks
+- placeholder spec checks
+- full `crystal spec`
 
 Equivalent checks:
 

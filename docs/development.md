@@ -14,3 +14,10 @@
 3. Run `make format lint test`.
 4. Keep usage/concept docs current (`README.md`, `docs/usage.md`) when APIs or behavior change.
 5. Keep parity notes current in docs and PR descriptions.
+
+## Release Checklist
+
+1. Bump version in `src/sandbox.cr` and `shard.yml`.
+2. Update `CHANGELOG.md` with the release date and notable changes.
+3. Run `make format lint test parity`.
+4. Commit, tag `vX.Y.Z`, and push branch + tags.

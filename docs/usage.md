@@ -1,5 +1,8 @@
 # Usage Guide
 
+Library version: `v0.7.0`
+Release notes: [CHANGELOG.md](/Users/dominic/repos/github.com/dsisnero/sandbox/CHANGELOG.md)
+
 ## Quick Start
 
 ```crystal
