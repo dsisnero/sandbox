@@ -20,6 +20,7 @@ test:
 
 parity:
 	./scripts/check_inventory_clean.sh
+	./scripts/check_rust_split_parity.sh
 
 clean:
 	rm -rf .crystal-cache

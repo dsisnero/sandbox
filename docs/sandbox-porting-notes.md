@@ -40,6 +40,11 @@ Upstream revision: `24b8d443b82aad9f336b9c379aebbeab8667466a`
   - `make test`
   - `make parity`
 
+`make parity` now executes canonical split Rust parity check scripts across:
+- linux sandbox manifests against `vendor/codex/codex-rs/linux-sandbox`
+- windows sandbox manifests against `vendor/codex/codex-rs/windows-sandbox-rs`
+- seatbelt manifests against `plans/parity_sources/seatbelt_core`
+
 ## Next Porting Steps
 
 1. Continue hardening Windows internals toward stricter upstream robustness, while

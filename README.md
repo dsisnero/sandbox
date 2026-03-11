@@ -136,6 +136,10 @@ Use the `Makefile` commands:
 - `make parity`
 - `make clean`
 
+`make parity` runs:
+- inventory status cleanliness checks
+- canonical split Rust parity drift checks (linux/windows/seatbelt source + test + port inventories)
+
 Equivalent checks:
 
 - `crystal tool format --check src spec`
