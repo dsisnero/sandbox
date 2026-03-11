@@ -32,6 +32,11 @@ request = manager.transform(
 
 # Optional Windows state root (setup markers, logs, helper metadata):
 Sandbox::Sandboxing::WindowsSandbox.sandbox_home = "/var/lib/my-agent/sandbox-state"
+
+# Optional Windows sandbox identity defaults:
+Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group = "AgentSandboxUsers"
+Sandbox::Sandboxing::WindowsSandbox.offline_username = "AgentSandboxOffline"
+Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
 ```
 
 ## Execution Model
@@ -97,8 +102,12 @@ Typical policies:
 - Windows:
   - Uses Windows sandbox module behavior through policy-driven request transformation.
   - Configure `Sandbox::Sandboxing::WindowsSandbox.sandbox_home` to choose where Windows setup/state files are persisted.
+  - Configure sandbox identity defaults for your agent:
+    - `Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group`
+    - `Sandbox::Sandboxing::WindowsSandbox.offline_username`
+    - `Sandbox::Sandboxing::WindowsSandbox.online_username`
   - Windows setup/identity helper APIs are Windows-only and fail fast on Linux/macOS hosts.
-  - `run_windows_sandbox_capture` and Windows preflight reject insecure unsandboxed fallback by default.
+  - `run_windows_sandbox_capture`, Windows preflight, and setup refresh/elevated setup reject insecure unsandboxed fallback by default.
   - Transitional override (not recommended): set `SBX_WINDOWS_ALLOW_INSECURE_FALLBACK=1`.
 
 ## Minimal Runner Example

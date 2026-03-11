@@ -374,519 +374,521 @@ describe Sandbox::Sandboxing do
   end
 end
 
-describe Sandbox::Sandboxing::LinuxSandbox do
-  it "classifies proxy mode as highest priority network mode" do
-    mode = Sandbox::Sandboxing::LinuxSandbox.bwrap_network_mode(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      true
-    )
-    mode.should eq(Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::ProxyOnly)
-  end
-
-  it "enforces seccomp for managed network even with full network policy" do
-    Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      true
-    ).should be_true
-  end
-
-  it "skips seccomp for full network policy without managed network" do
-    Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      false
-    ).should be_false
-  end
-
-  it "always installs seccomp for restricted network policy" do
-    Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      false
-    ).should be_true
-    Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      true
-    ).should be_true
-  end
-
-  it "uses proxy-routed seccomp mode for managed proxy routes" do
-    Sandbox::Sandboxing::LinuxSandbox.network_seccomp_mode(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      true,
-      true
-    ).should eq(Sandbox::Sandboxing::LinuxSandbox::SeccompNetworkMode::ProxyRouted)
-  end
-
-  it "uses restricted seccomp mode for restricted network without proxy routing" do
-    Sandbox::Sandboxing::LinuxSandbox.network_seccomp_mode(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      false,
-      false
-    ).should eq(Sandbox::Sandboxing::LinuxSandbox::SeccompNetworkMode::Restricted)
-  end
-
-  it "returns no seccomp mode for full network without managed proxy" do
-    Sandbox::Sandboxing::LinuxSandbox.network_seccomp_mode(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      false,
-      false
-    ).should be_nil
-  end
-
-  it "mounts /dev before writable /dev binds" do
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
-      readable_roots: ["/"],
-      writable_roots: ["/", "/dev"],
-      unreadable_roots: [] of String,
-      full_disk_read_access: true
-    )
-
-    args.should eq(
-      [
-        "--ro-bind",
-        "/",
-        "/",
-        "--dev",
-        "/dev",
-        "--bind",
-        "/",
-        "/",
-        "--bind",
-        "/dev",
-        "/dev",
-      ]
-    )
-  end
-
-  it "uses scoped readable roots for restricted read-only mode" do
-    temp = "/tmp/linux-bwrap-readable-#{Random.rand(100_000)}"
-    readable_root = File.join(temp, "readable")
-    Dir.mkdir_p(readable_root)
-
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
-      readable_roots: [readable_root],
-      writable_roots: [] of String,
-      unreadable_roots: [] of String,
-      full_disk_read_access: false
-    )
-
-    args[0, 4].should eq(["--tmpfs", "/", "--dev", "/dev"])
-    args.each_cons(3).any? { |slice| slice == ["--ro-bind", readable_root, readable_root] }.should be_true
-    FileUtils.rm_rf(temp)
-  end
-
-  it "includes /usr as platform default read root when requested and present" do
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
-      readable_roots: [] of String,
-      writable_roots: [] of String,
-      unreadable_roots: [] of String,
-      full_disk_read_access: false,
-      include_platform_defaults: true
-    )
-
-    if Dir.exists?("/usr")
-      args.each_cons(3).any? { |slice| slice == ["--ro-bind", "/usr", "/usr"] }.should be_true
+{% if flag?(:linux) %}
+  describe Sandbox::Sandboxing::LinuxSandbox do
+    it "classifies proxy mode as highest priority network mode" do
+      mode = Sandbox::Sandboxing::LinuxSandbox.bwrap_network_mode(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        true
+      )
+      mode.should eq(Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::ProxyOnly)
     end
-  end
 
-  it "masks root-read directory carveouts with tmpfs" do
-    temp = "/tmp/linux-bwrap-mask-dir-#{Random.rand(100_000)}"
-    unreadable = File.join(temp, "private")
-    Dir.mkdir_p(unreadable)
+    it "enforces seccomp for managed network even with full network policy" do
+      Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        true
+      ).should be_true
+    end
 
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
-      readable_roots: ["/"],
-      writable_roots: [] of String,
-      unreadable_roots: [unreadable],
-      full_disk_read_access: true
-    )
+    it "skips seccomp for full network policy without managed network" do
+      Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        false
+      ).should be_false
+    end
 
-    args.each_cons(2).any? { |slice| slice == ["--tmpfs", unreadable] }.should be_true
-    FileUtils.rm_rf(temp)
-  end
+    it "always installs seccomp for restricted network policy" do
+      Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        false
+      ).should be_true
+      Sandbox::Sandboxing::LinuxSandbox.should_install_network_seccomp(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        true
+      ).should be_true
+    end
 
-  it "masks root-read file carveouts with tmpfs" do
-    temp = "/tmp/linux-bwrap-mask-file-#{Random.rand(100_000)}"
-    unreadable = File.join(temp, "secret.txt")
-    Dir.mkdir_p(temp)
-    File.write(unreadable, "secret")
+    it "uses proxy-routed seccomp mode for managed proxy routes" do
+      Sandbox::Sandboxing::LinuxSandbox.network_seccomp_mode(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        true,
+        true
+      ).should eq(Sandbox::Sandboxing::LinuxSandbox::SeccompNetworkMode::ProxyRouted)
+    end
 
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
-      readable_roots: ["/"],
-      writable_roots: [] of String,
-      unreadable_roots: [unreadable],
-      full_disk_read_access: true
-    )
+    it "uses restricted seccomp mode for restricted network without proxy routing" do
+      Sandbox::Sandboxing::LinuxSandbox.network_seccomp_mode(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        false,
+        false
+      ).should eq(Sandbox::Sandboxing::LinuxSandbox::SeccompNetworkMode::Restricted)
+    end
 
-    args.each_cons(2).any? { |slice| slice == ["--tmpfs", unreadable] }.should be_true
-    FileUtils.rm_rf(temp)
-  end
+    it "returns no seccomp mode for full network without managed proxy" do
+      Sandbox::Sandboxing::LinuxSandbox.network_seccomp_mode(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        false,
+        false
+      ).should be_nil
+    end
 
-  it "reapplies unreadable carveouts after writable binds" do
-    temp = "/tmp/linux-bwrap-carveout-order-#{Random.rand(100_000)}"
-    writable = File.join(temp, "workspace")
-    unreadable = File.join(writable, ".git")
-    Dir.mkdir_p(unreadable)
+    it "mounts /dev before writable /dev binds" do
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
+        readable_roots: ["/"],
+        writable_roots: ["/", "/dev"],
+        unreadable_roots: [] of String,
+        full_disk_read_access: true
+      )
 
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
-      readable_roots: ["/"],
-      writable_roots: [writable],
-      unreadable_roots: [unreadable],
-      full_disk_read_access: true
-    )
+      args.should eq(
+        [
+          "--ro-bind",
+          "/",
+          "/",
+          "--dev",
+          "/dev",
+          "--bind",
+          "/",
+          "/",
+          "--bind",
+          "/dev",
+          "/dev",
+        ]
+      )
+    end
 
-    bind_idx = args.index("--bind")
-    mask_idx = args.index("--tmpfs")
-    bind_idx.should_not be_nil
-    mask_idx.should_not be_nil
-    if bind = bind_idx
-      if mask = mask_idx
-        mask.should be > bind
+    it "uses scoped readable roots for restricted read-only mode" do
+      temp = "/tmp/linux-bwrap-readable-#{Random.rand(100_000)}"
+      readable_root = File.join(temp, "readable")
+      Dir.mkdir_p(readable_root)
+
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
+        readable_roots: [readable_root],
+        writable_roots: [] of String,
+        unreadable_roots: [] of String,
+        full_disk_read_access: false
+      )
+
+      args[0, 4].should eq(["--tmpfs", "/", "--dev", "/dev"])
+      args.each_cons(3).any? { |slice| slice == ["--ro-bind", readable_root, readable_root] }.should be_true
+      FileUtils.rm_rf(temp)
+    end
+
+    it "includes /usr as platform default read root when requested and present" do
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
+        readable_roots: [] of String,
+        writable_roots: [] of String,
+        unreadable_roots: [] of String,
+        full_disk_read_access: false,
+        include_platform_defaults: true
+      )
+
+      if Dir.exists?("/usr")
+        args.each_cons(3).any? { |slice| slice == ["--ro-bind", "/usr", "/usr"] }.should be_true
       end
     end
-    FileUtils.rm_rf(temp)
-  end
 
-  it "returns unwrapped command for full disk write + full network bwrap mode" do
-    command = ["/bin/true"]
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
-      command,
-      Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
-      Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::FullAccess
-    )
+    it "masks root-read directory carveouts with tmpfs" do
+      temp = "/tmp/linux-bwrap-mask-dir-#{Random.rand(100_000)}"
+      unreadable = File.join(temp, "private")
+      Dir.mkdir_p(unreadable)
 
-    args.should eq(command)
-  end
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
+        readable_roots: ["/"],
+        writable_roots: [] of String,
+        unreadable_roots: [unreadable],
+        full_disk_read_access: true
+      )
 
-  it "wraps full filesystem command and unshares network for proxy-only mode" do
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
-      ["/bin/true"],
-      Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
-      Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::ProxyOnly
-    )
-
-    args.should eq(
-      [
-        "--new-session",
-        "--die-with-parent",
-        "--bind",
-        "/",
-        "/",
-        "--unshare-user",
-        "--unshare-pid",
-        "--unshare-net",
-        "--proc",
-        "/proc",
-        "--",
-        "/bin/true",
-      ]
-    )
-  end
-
-  it "unshares network when isolated network mode is requested" do
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
-      ["/bin/true"],
-      Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted,
-      Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::Isolated
-    )
-
-    args.includes?("--unshare-net").should be_true
-  end
-
-  it "unshares network when proxy-only network mode is requested" do
-    args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
-      ["/bin/true"],
-      Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted,
-      Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::ProxyOnly
-    )
-
-    args.includes?("--unshare-net").should be_true
-  end
-
-  it "detects known proc mount failures" do
-    stderr = "bwrap: Can't mount proc on /newroot/proc: Permission denied"
-    Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_true
-  end
-
-  it "detects proc mount invalid argument failure" do
-    stderr = "bwrap: Can't mount proc on /newroot/proc: Invalid argument"
-    Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_true
-  end
-
-  it "detects proc mount operation not permitted failure" do
-    stderr = "bwrap: Can't mount proc on /newroot/proc: Operation not permitted"
-    Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_true
-  end
-
-  it "ignores non proc mount errors" do
-    stderr = "bwrap: Failed to open /newroot/etc/hosts: Permission denied"
-    Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_false
-  end
-
-  it "rejects inner seccomp mode without bwrap" do
-    expect_raises(Exception, /requires --use-bwrap-sandbox/) do
-      Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(true, false)
+      args.each_cons(2).any? { |slice| slice == ["--tmpfs", unreadable] }.should be_true
+      FileUtils.rm_rf(temp)
     end
-  end
 
-  it "builds inner seccomp command with split-policy flags" do
-    cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
-      sandbox_policy_cwd: "/tmp",
-      use_bwrap_sandbox: true,
-      command: ["/bin/true"]
-    )
+    it "masks root-read file carveouts with tmpfs" do
+      temp = "/tmp/linux-bwrap-mask-file-#{Random.rand(100_000)}"
+      unreadable = File.join(temp, "secret.txt")
+      Dir.mkdir_p(temp)
+      File.write(unreadable, "secret")
 
-    inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
-      cmd,
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      "/tmp/codex-linux-sandbox"
-    )
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
+        readable_roots: ["/"],
+        writable_roots: [] of String,
+        unreadable_roots: [unreadable],
+        full_disk_read_access: true
+      )
 
-    inner.includes?("--file-system-sandbox-policy").should be_true
-    inner.includes?("--network-sandbox-policy").should be_true
-    inner.includes?("--apply-seccomp-then-exec").should be_true
-  end
-
-  it "keeps sandbox argv0 before command separator" do
-    cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
-      sandbox_policy_cwd: "/tmp",
-      use_bwrap_sandbox: true,
-      command: ["/bin/true"]
-    )
-
-    inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
-      cmd,
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      "codex-linux-sandbox"
-    )
-
-    inner.first.should eq("codex-linux-sandbox")
-    separator_index = inner.index("--")
-    separator_index.should_not be_nil
-    if index = separator_index
-      index.should be > 0
+      args.each_cons(2).any? { |slice| slice == ["--tmpfs", unreadable] }.should be_true
+      FileUtils.rm_rf(temp)
     end
-    inner.last.should eq("/bin/true")
-  end
 
-  it "requires proxy route spec for managed proxy inner command" do
-    cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
-      sandbox_policy_cwd: "/tmp",
-      use_bwrap_sandbox: true,
-      allow_network_for_proxy: true,
-      command: ["/bin/true"]
-    )
+    it "reapplies unreadable carveouts after writable binds" do
+      temp = "/tmp/linux-bwrap-carveout-order-#{Random.rand(100_000)}"
+      writable = File.join(temp, "workspace")
+      unreadable = File.join(writable, ".git")
+      Dir.mkdir_p(unreadable)
 
-    expect_raises(Exception, /requires --proxy-route-spec/) do
-      Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_filesystem_args(
+        readable_roots: ["/"],
+        writable_roots: [writable],
+        unreadable_roots: [unreadable],
+        full_disk_read_access: true
+      )
+
+      bind_idx = args.index("--bind")
+      mask_idx = args.index("--tmpfs")
+      bind_idx.should_not be_nil
+      mask_idx.should_not be_nil
+      if bind = bind_idx
+        if mask = mask_idx
+          mask.should be > bind
+        end
+      end
+      FileUtils.rm_rf(temp)
+    end
+
+    it "returns unwrapped command for full disk write + full network bwrap mode" do
+      command = ["/bin/true"]
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
+        command,
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
+        Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::FullAccess
+      )
+
+      args.should eq(command)
+    end
+
+    it "wraps full filesystem command and unshares network for proxy-only mode" do
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
+        ["/bin/true"],
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
+        Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::ProxyOnly
+      )
+
+      args.should eq(
+        [
+          "--new-session",
+          "--die-with-parent",
+          "--bind",
+          "/",
+          "/",
+          "--unshare-user",
+          "--unshare-pid",
+          "--unshare-net",
+          "--proc",
+          "/proc",
+          "--",
+          "/bin/true",
+        ]
+      )
+    end
+
+    it "unshares network when isolated network mode is requested" do
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
+        ["/bin/true"],
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted,
+        Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::Isolated
+      )
+
+      args.includes?("--unshare-net").should be_true
+    end
+
+    it "unshares network when proxy-only network mode is requested" do
+      args = Sandbox::Sandboxing::LinuxSandbox.create_bwrap_command_args(
+        ["/bin/true"],
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted,
+        Sandbox::Sandboxing::LinuxSandbox::BwrapNetworkMode::ProxyOnly
+      )
+
+      args.includes?("--unshare-net").should be_true
+    end
+
+    it "detects known proc mount failures" do
+      stderr = "bwrap: Can't mount proc on /newroot/proc: Permission denied"
+      Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_true
+    end
+
+    it "detects proc mount invalid argument failure" do
+      stderr = "bwrap: Can't mount proc on /newroot/proc: Invalid argument"
+      Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_true
+    end
+
+    it "detects proc mount operation not permitted failure" do
+      stderr = "bwrap: Can't mount proc on /newroot/proc: Operation not permitted"
+      Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_true
+    end
+
+    it "ignores non proc mount errors" do
+      stderr = "bwrap: Failed to open /newroot/etc/hosts: Permission denied"
+      Sandbox::Sandboxing::LinuxSandbox.proc_mount_failure?(stderr).should be_false
+    end
+
+    it "rejects inner seccomp mode without bwrap" do
+      expect_raises(Exception, /requires --use-bwrap-sandbox/) do
+        Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(true, false)
+      end
+    end
+
+    it "builds inner seccomp command with split-policy flags" do
+      cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
+        sandbox_policy_cwd: "/tmp",
+        use_bwrap_sandbox: true,
+        command: ["/bin/true"]
+      )
+
+      inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
         cmd,
         Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
         "/tmp/codex-linux-sandbox"
       )
+
+      inner.includes?("--file-system-sandbox-policy").should be_true
+      inner.includes?("--network-sandbox-policy").should be_true
+      inner.includes?("--apply-seccomp-then-exec").should be_true
     end
-  end
 
-  it "includes route spec in managed proxy inner command when present" do
-    cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
-      sandbox_policy_cwd: "/tmp",
-      use_bwrap_sandbox: true,
-      allow_network_for_proxy: true,
-      proxy_route_spec: %({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy.sock"}]}),
-      command: ["/bin/true"]
-    )
+    it "keeps sandbox argv0 before command separator" do
+      cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
+        sandbox_policy_cwd: "/tmp",
+        use_bwrap_sandbox: true,
+        command: ["/bin/true"]
+      )
 
-    inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
-      cmd,
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      "/tmp/codex-linux-sandbox"
-    )
+      inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
+        cmd,
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        "codex-linux-sandbox"
+      )
 
-    inner.includes?("--allow-network-for-proxy").should be_true
-    inner.includes?("--proxy-route-spec").should be_true
-    inner.includes?(%({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy.sock"}]})).should be_true
-  end
+      inner.first.should eq("codex-linux-sandbox")
+      separator_index = inner.index("--")
+      separator_index.should_not be_nil
+      if index = separator_index
+        index.should be > 0
+      end
+      inner.last.should eq("/bin/true")
+    end
 
-  it "managed proxy preflight for full access still wraps command with separator" do
-    cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
-      sandbox_policy_cwd: "/tmp",
-      use_bwrap_sandbox: true,
-      allow_network_for_proxy: true,
-      proxy_route_spec: %({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy.sock"}]}),
-      command: ["/bin/true"]
-    )
-    inner = Sandbox::Sandboxing::LinuxSandbox.run_main(
-      cmd,
-      Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      "codex-linux-sandbox"
-    )
+    it "requires proxy route spec for managed proxy inner command" do
+      cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
+        sandbox_policy_cwd: "/tmp",
+        use_bwrap_sandbox: true,
+        allow_network_for_proxy: true,
+        command: ["/bin/true"]
+      )
 
-    inner.first.should eq("codex-linux-sandbox")
-    inner.includes?("--").should be_true
-  end
+      expect_raises(Exception, /requires --proxy-route-spec/) do
+        Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
+          cmd,
+          Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+          "/tmp/codex-linux-sandbox"
+        )
+      end
+    end
 
-  it "omits proxy route spec when managed proxy is disabled" do
-    cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
-      sandbox_policy_cwd: "/tmp",
-      use_bwrap_sandbox: true,
-      allow_network_for_proxy: false,
-      command: ["/bin/true"]
-    )
-    inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
-      cmd,
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      "/tmp/codex-linux-sandbox"
-    )
-    inner.includes?("--proxy-route-spec").should be_false
-  end
+    it "includes route spec in managed proxy inner command when present" do
+      cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
+        sandbox_policy_cwd: "/tmp",
+        use_bwrap_sandbox: true,
+        allow_network_for_proxy: true,
+        proxy_route_spec: %({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy.sock"}]}),
+        command: ["/bin/true"]
+      )
 
-  it "accepts valid inner stage modes" do
-    Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(false, false)
-    Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(false, true)
-    Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(true, true)
-  end
+      inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
+        cmd,
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        "/tmp/codex-linux-sandbox"
+      )
 
-  it "derives split policies from legacy policy" do
-    resolved = Sandbox::Sandboxing::LinuxSandbox.resolve_sandbox_policies(
-      "/tmp",
-      Sandbox::Sandboxing::LinuxSandbox::LegacySandboxPolicy::ReadOnly,
-      nil,
-      nil
-    )
+      inner.includes?("--allow-network-for-proxy").should be_true
+      inner.includes?("--proxy-route-spec").should be_true
+      inner.includes?(%({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy.sock"}]})).should be_true
+    end
 
-    resolved.sandbox_policy.should eq(
-      Sandbox::Sandboxing::LinuxSandbox::LegacySandboxPolicy::ReadOnly
-    )
-    resolved.file_system_sandbox_policy.kind.should eq(
-      Sandbox::Sandboxing::FileSystemSandboxKind::Restricted
-    )
-    resolved.network_sandbox_policy.should eq(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted
-    )
-  end
+    it "managed proxy preflight for full access still wraps command with separator" do
+      cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
+        sandbox_policy_cwd: "/tmp",
+        use_bwrap_sandbox: true,
+        allow_network_for_proxy: true,
+        proxy_route_spec: %({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy.sock"}]}),
+        command: ["/bin/true"]
+      )
+      inner = Sandbox::Sandboxing::LinuxSandbox.run_main(
+        cmd,
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        "codex-linux-sandbox"
+      )
 
-  it "derives legacy policy from split policies" do
-    resolved = Sandbox::Sandboxing::LinuxSandbox.resolve_sandbox_policies(
-      "/tmp",
-      nil,
-      Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted
-    )
+      inner.first.should eq("codex-linux-sandbox")
+      inner.includes?("--").should be_true
+    end
 
-    resolved.sandbox_policy.should eq(
-      Sandbox::Sandboxing::LinuxSandbox::LegacySandboxPolicy::WorkspaceWrite
-    )
-  end
+    it "omits proxy route spec when managed proxy is disabled" do
+      cmd = Sandbox::Sandboxing::LinuxSandbox::LandlockCommand.new(
+        sandbox_policy_cwd: "/tmp",
+        use_bwrap_sandbox: true,
+        allow_network_for_proxy: false,
+        command: ["/bin/true"]
+      )
+      inner = Sandbox::Sandboxing::LinuxSandbox.build_inner_seccomp_command(
+        cmd,
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        "/tmp/codex-linux-sandbox"
+      )
+      inner.includes?("--proxy-route-spec").should be_false
+    end
 
-  it "rejects partial split policies" do
-    expect_raises(Exception, /must be provided together/) do
-      Sandbox::Sandboxing::LinuxSandbox.resolve_sandbox_policies(
+    it "accepts valid inner stage modes" do
+      Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(false, false)
+      Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(false, true)
+      Sandbox::Sandboxing::LinuxSandbox.ensure_inner_stage_mode_is_valid(true, true)
+    end
+
+    it "derives split policies from legacy policy" do
+      resolved = Sandbox::Sandboxing::LinuxSandbox.resolve_sandbox_policies(
         "/tmp",
         Sandbox::Sandboxing::LinuxSandbox::LegacySandboxPolicy::ReadOnly,
-        Sandbox::Sandboxing::FileSystemSandboxPolicy.unrestricted,
+        nil,
         nil
+      )
+
+      resolved.sandbox_policy.should eq(
+        Sandbox::Sandboxing::LinuxSandbox::LegacySandboxPolicy::ReadOnly
+      )
+      resolved.file_system_sandbox_policy.kind.should eq(
+        Sandbox::Sandboxing::FileSystemSandboxKind::Restricted
+      )
+      resolved.network_sandbox_policy.should eq(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted
+      )
+    end
+
+    it "derives legacy policy from split policies" do
+      resolved = Sandbox::Sandboxing::LinuxSandbox.resolve_sandbox_policies(
+        "/tmp",
+        nil,
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted(full_disk_write_access: true),
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted
+      )
+
+      resolved.sandbox_policy.should eq(
+        Sandbox::Sandboxing::LinuxSandbox::LegacySandboxPolicy::WorkspaceWrite
+      )
+    end
+
+    it "rejects partial split policies" do
+      expect_raises(Exception, /must be provided together/) do
+        Sandbox::Sandboxing::LinuxSandbox.resolve_sandbox_policies(
+          "/tmp",
+          Sandbox::Sandboxing::LinuxSandbox::LegacySandboxPolicy::ReadOnly,
+          Sandbox::Sandboxing::FileSystemSandboxPolicy.unrestricted,
+          nil
+        )
+      end
+    end
+
+    it "recognizes proxy env keys case-insensitively" do
+      Sandbox::Sandboxing::LinuxSandbox.proxy_env_key?("HTTP_PROXY").should be_true
+      Sandbox::Sandboxing::LinuxSandbox.proxy_env_key?("http_proxy").should be_true
+      Sandbox::Sandboxing::LinuxSandbox.proxy_env_key?("PATH").should be_false
+    end
+
+    it "parses loopback proxy endpoint and ignores non-loopback endpoint" do
+      Sandbox::Sandboxing::LinuxSandbox.parse_loopback_proxy_endpoint(
+        "http://127.0.0.1:43128"
+      ).should eq("127.0.0.1:43128")
+      Sandbox::Sandboxing::LinuxSandbox.parse_loopback_proxy_endpoint(
+        "http://example.com:3128"
+      ).should be_nil
+    end
+
+    it "plans proxy routes from valid loopback env entries only" do
+      env = {
+        "HTTP_PROXY"  => "http://127.0.0.1:43128",
+        "HTTPS_PROXY" => "http://example.com:3128",
+        "PATH"        => "/usr/bin",
+      }
+      plan = Sandbox::Sandboxing::LinuxSandbox.plan_proxy_routes(env)
+
+      plan.has_proxy_config?.should be_true
+      plan.routes.size.should eq(1)
+      plan.routes.first.env_key.should eq("HTTP_PROXY")
+      plan.routes.first.endpoint.should eq("127.0.0.1:43128")
+    end
+
+    it "rewrites proxy url to local loopback port" do
+      rewritten = Sandbox::Sandboxing::LinuxSandbox.rewrite_proxy_env_value(
+        "socks5h://127.0.0.1:8081",
+        43210
+      )
+      rewritten.should eq("socks5h://127.0.0.1:43210")
+    end
+
+    it "returns expected default proxy ports" do
+      Sandbox::Sandboxing::LinuxSandbox.default_proxy_port("http").should eq(80)
+      Sandbox::Sandboxing::LinuxSandbox.default_proxy_port("https").should eq(443)
+      Sandbox::Sandboxing::LinuxSandbox.default_proxy_port("socks5h").should eq(1080)
+    end
+
+    it "parses proxy socket dir owner pid from directory names" do
+      Sandbox::Sandboxing::LinuxSandbox.parse_proxy_socket_dir_owner_pid(
+        "codex-linux-sandbox-proxy-1234-0"
+      ).should eq(1234)
+      Sandbox::Sandboxing::LinuxSandbox.parse_proxy_socket_dir_owner_pid(
+        "codex-linux-sandbox-proxy-x"
+      ).should be_nil
+      Sandbox::Sandboxing::LinuxSandbox.parse_proxy_socket_dir_owner_pid(
+        "not-a-proxy-dir"
+      ).should be_nil
+    end
+
+    it "cleans stale proxy socket dirs while leaving unrelated dirs" do
+      temp = "/tmp/proxy-routing-spec-#{Random.rand(100_000)}"
+      Dir.mkdir_p(temp)
+      stale = File.join(temp, "codex-linux-sandbox-proxy-99999-0")
+      unrelated = File.join(temp, "unrelated-proxy-dir")
+      Dir.mkdir(stale)
+      Dir.mkdir(unrelated)
+
+      Sandbox::Sandboxing::LinuxSandbox.cleanup_stale_proxy_socket_dirs_in(temp)
+
+      Dir.exists?(stale).should be_false
+      Dir.exists?(unrelated).should be_true
+      FileUtils.rm_rf(temp)
+    end
+
+    it "cleanup_proxy_socket_dir removes bridge artifacts" do
+      temp = "/tmp/proxy-routing-cleanup-#{Random.rand(100_000)}"
+      socket_dir = File.join(temp, "codex-linux-sandbox-proxy-test")
+      Dir.mkdir_p(socket_dir)
+      marker = File.join(socket_dir, "bridge.sock")
+      File.write(marker, "test")
+
+      Sandbox::Sandboxing::LinuxSandbox.cleanup_proxy_socket_dir(socket_dir)
+
+      Dir.exists?(socket_dir).should be_false
+      FileUtils.rm_rf(temp)
+    end
+
+    it "proxy route spec serialization omits proxy urls" do
+      spec = Sandbox::Sandboxing::LinuxSandbox::ProxyRouteSpec.new(
+        [
+          Sandbox::Sandboxing::LinuxSandbox::ProxyRouteEntry.new(
+            "HTTP_PROXY",
+            "/tmp/proxy-route-0.sock"
+          ),
+        ]
+      )
+
+      serialized = Sandbox::Sandboxing::LinuxSandbox.serialize_proxy_route_spec(spec)
+      serialized.should eq(
+        %({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy-route-0.sock"}]})
       )
     end
   end
-
-  it "recognizes proxy env keys case-insensitively" do
-    Sandbox::Sandboxing::LinuxSandbox.proxy_env_key?("HTTP_PROXY").should be_true
-    Sandbox::Sandboxing::LinuxSandbox.proxy_env_key?("http_proxy").should be_true
-    Sandbox::Sandboxing::LinuxSandbox.proxy_env_key?("PATH").should be_false
-  end
-
-  it "parses loopback proxy endpoint and ignores non-loopback endpoint" do
-    Sandbox::Sandboxing::LinuxSandbox.parse_loopback_proxy_endpoint(
-      "http://127.0.0.1:43128"
-    ).should eq("127.0.0.1:43128")
-    Sandbox::Sandboxing::LinuxSandbox.parse_loopback_proxy_endpoint(
-      "http://example.com:3128"
-    ).should be_nil
-  end
-
-  it "plans proxy routes from valid loopback env entries only" do
-    env = {
-      "HTTP_PROXY"  => "http://127.0.0.1:43128",
-      "HTTPS_PROXY" => "http://example.com:3128",
-      "PATH"        => "/usr/bin",
-    }
-    plan = Sandbox::Sandboxing::LinuxSandbox.plan_proxy_routes(env)
-
-    plan.has_proxy_config?.should be_true
-    plan.routes.size.should eq(1)
-    plan.routes.first.env_key.should eq("HTTP_PROXY")
-    plan.routes.first.endpoint.should eq("127.0.0.1:43128")
-  end
-
-  it "rewrites proxy url to local loopback port" do
-    rewritten = Sandbox::Sandboxing::LinuxSandbox.rewrite_proxy_env_value(
-      "socks5h://127.0.0.1:8081",
-      43210
-    )
-    rewritten.should eq("socks5h://127.0.0.1:43210")
-  end
-
-  it "returns expected default proxy ports" do
-    Sandbox::Sandboxing::LinuxSandbox.default_proxy_port("http").should eq(80)
-    Sandbox::Sandboxing::LinuxSandbox.default_proxy_port("https").should eq(443)
-    Sandbox::Sandboxing::LinuxSandbox.default_proxy_port("socks5h").should eq(1080)
-  end
-
-  it "parses proxy socket dir owner pid from directory names" do
-    Sandbox::Sandboxing::LinuxSandbox.parse_proxy_socket_dir_owner_pid(
-      "codex-linux-sandbox-proxy-1234-0"
-    ).should eq(1234)
-    Sandbox::Sandboxing::LinuxSandbox.parse_proxy_socket_dir_owner_pid(
-      "codex-linux-sandbox-proxy-x"
-    ).should be_nil
-    Sandbox::Sandboxing::LinuxSandbox.parse_proxy_socket_dir_owner_pid(
-      "not-a-proxy-dir"
-    ).should be_nil
-  end
-
-  it "cleans stale proxy socket dirs while leaving unrelated dirs" do
-    temp = "/tmp/proxy-routing-spec-#{Random.rand(100_000)}"
-    Dir.mkdir_p(temp)
-    stale = File.join(temp, "codex-linux-sandbox-proxy-99999-0")
-    unrelated = File.join(temp, "unrelated-proxy-dir")
-    Dir.mkdir(stale)
-    Dir.mkdir(unrelated)
-
-    Sandbox::Sandboxing::LinuxSandbox.cleanup_stale_proxy_socket_dirs_in(temp)
-
-    Dir.exists?(stale).should be_false
-    Dir.exists?(unrelated).should be_true
-    FileUtils.rm_rf(temp)
-  end
-
-  it "cleanup_proxy_socket_dir removes bridge artifacts" do
-    temp = "/tmp/proxy-routing-cleanup-#{Random.rand(100_000)}"
-    socket_dir = File.join(temp, "codex-linux-sandbox-proxy-test")
-    Dir.mkdir_p(socket_dir)
-    marker = File.join(socket_dir, "bridge.sock")
-    File.write(marker, "test")
-
-    Sandbox::Sandboxing::LinuxSandbox.cleanup_proxy_socket_dir(socket_dir)
-
-    Dir.exists?(socket_dir).should be_false
-    FileUtils.rm_rf(temp)
-  end
-
-  it "proxy route spec serialization omits proxy urls" do
-    spec = Sandbox::Sandboxing::LinuxSandbox::ProxyRouteSpec.new(
-      [
-        Sandbox::Sandboxing::LinuxSandbox::ProxyRouteEntry.new(
-          "HTTP_PROXY",
-          "/tmp/proxy-route-0.sock"
-        ),
-      ]
-    )
-
-    serialized = Sandbox::Sandboxing::LinuxSandbox.serialize_proxy_route_spec(spec)
-    serialized.should eq(
-      %({"routes":[{"env_key":"HTTP_PROXY","uds_path":"/tmp/proxy-route-0.sock"}]})
-    )
-  end
-end
+{% end %}
 
 describe Sandbox::Sandboxing::WindowsSandbox do
   it "parses read-only policy preset" do
@@ -1551,6 +1553,21 @@ describe Sandbox::Sandboxing::WindowsSandbox do
     sid.should eq("S-1-5-32-544")
   end
 
+  it "rejects invalid SID byte payloads" do
+    expect_raises(ArgumentError, /too short/) do
+      Sandbox::Sandboxing::WindowsSandbox.sid_bytes_to_psid(Bytes[0x01, 0x01])
+    end
+
+    expect_raises(ArgumentError, /truncated/) do
+      Sandbox::Sandboxing::WindowsSandbox.sid_bytes_to_psid(
+        Bytes[
+          0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
+          0x20, 0x00, 0x00, 0x00,
+        ]
+      )
+    end
+  end
+
   it "setup_main_win_main reads and removes request payload" do
     temp = "/tmp/windows-setup-main-#{Random.rand(100_000)}"
     Dir.mkdir_p(temp)
@@ -1583,6 +1600,26 @@ describe Sandbox::Sandboxing::WindowsSandbox do
     end
   end
 
+  it "uses configurable sandbox identity defaults" do
+    previous_group = Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group
+    previous_offline = Sandbox::Sandboxing::WindowsSandbox.offline_username
+    previous_online = Sandbox::Sandboxing::WindowsSandbox.online_username
+    begin
+      Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group = "AgentSandboxUsers"
+      Sandbox::Sandboxing::WindowsSandbox.offline_username = "AgentSandboxOffline"
+      Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
+
+      creds = Sandbox::Sandboxing::WindowsSandbox.require_logon_sandbox_creds
+      creds.offline_username.should eq("AgentSandboxOffline")
+      creds.online_username.should eq("AgentSandboxOnline")
+      Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group.should eq("AgentSandboxUsers")
+    ensure
+      Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group = previous_group
+      Sandbox::Sandboxing::WindowsSandbox.offline_username = previous_offline
+      Sandbox::Sandboxing::WindowsSandbox.online_username = previous_online
+    end
+  end
+
   it "setup orchestrator version helpers match current version" do
     Sandbox::Sandboxing::WindowsSandbox.version_matches(
       Sandbox::Sandboxing::WindowsSandbox::SETUP_VERSION
@@ -1594,28 +1631,38 @@ describe Sandbox::Sandboxing::WindowsSandbox do
   it "setup refresh and elevated setup stubs are callable" do
     env = {"PATH" => "C:\\Windows\\System32"}
     {% if flag?(:win32) %}
-      Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh(
-        "workspace-write",
-        "/tmp",
-        "/tmp",
-        env,
-        "/tmp/codex-home-stub"
-      )
-      Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh_with_extra_read_roots(
-        "workspace-write",
-        "/tmp",
-        "/tmp",
-        env,
-        "/tmp/codex-home-stub",
-        ["/tmp"]
-      )
-      Sandbox::Sandboxing::WindowsSandbox.run_elevated_setup(
-        "workspace-write",
-        "/tmp",
-        "/tmp",
-        env,
-        "/tmp/codex-home-stub"
-      )
+      previous = ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"]?
+      begin
+        ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = "1"
+        Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh(
+          "workspace-write",
+          "/tmp",
+          "/tmp",
+          env,
+          "/tmp/codex-home-stub"
+        )
+        Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh_with_extra_read_roots(
+          "workspace-write",
+          "/tmp",
+          "/tmp",
+          env,
+          "/tmp/codex-home-stub",
+          ["/tmp"]
+        )
+        Sandbox::Sandboxing::WindowsSandbox.run_elevated_setup(
+          "workspace-write",
+          "/tmp",
+          "/tmp",
+          env,
+          "/tmp/codex-home-stub"
+        )
+      ensure
+        if previous
+          ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = previous
+        else
+          ENV.delete("SBX_WINDOWS_ALLOW_INSECURE_FALLBACK")
+        end
+      end
     {% else %}
       expect_raises(Exception, /Windows sandbox is only available on Windows/) do
         Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh(
@@ -1655,13 +1702,23 @@ describe Sandbox::Sandboxing::WindowsSandbox do
     Dir.mkdir_p(workspace)
 
     {% if flag?(:win32) %}
-      Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh(
-        "workspace-write",
-        workspace,
-        workspace,
-        Hash(String, String).new,
-        codex_home
-      )
+      previous = ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"]?
+      begin
+        ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = "1"
+        Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh(
+          "workspace-write",
+          workspace,
+          workspace,
+          Hash(String, String).new,
+          codex_home
+        )
+      ensure
+        if previous
+          ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = previous
+        else
+          ENV.delete("SBX_WINDOWS_ALLOW_INSECURE_FALLBACK")
+        end
+      end
 
       File.exists?(Sandbox::Sandboxing::WindowsSandbox.setup_marker_path(codex_home)).should be_true
       File.exists?(Sandbox::Sandboxing::WindowsSandbox.sandbox_users_path(codex_home)).should be_true
@@ -1689,14 +1746,24 @@ describe Sandbox::Sandboxing::WindowsSandbox do
     Dir.mkdir_p(extra)
 
     {% if flag?(:win32) %}
-      Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh_with_extra_read_roots(
-        "workspace-write",
-        workspace,
-        workspace,
-        Hash(String, String).new,
-        codex_home,
-        [extra, missing]
-      )
+      previous = ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"]?
+      begin
+        ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = "1"
+        Sandbox::Sandboxing::WindowsSandbox.run_setup_refresh_with_extra_read_roots(
+          "workspace-write",
+          workspace,
+          workspace,
+          Hash(String, String).new,
+          codex_home,
+          [extra, missing]
+        )
+      ensure
+        if previous
+          ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = previous
+        else
+          ENV.delete("SBX_WINDOWS_ALLOW_INSECURE_FALLBACK")
+        end
+      end
 
       roots_path = File.join(Sandbox::Sandboxing::WindowsSandbox.sandbox_dir(codex_home), "read_roots.json")
       File.exists?(roots_path).should be_true
@@ -1851,12 +1918,22 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "captures command output for workspace-write policy" do
     {% if flag?(:win32) %}
-      result = Sandbox::Sandboxing::WindowsSandbox.run_windows_sandbox_capture(
-        "workspace-write",
-        ["/bin/echo", "hello"],
-        "/tmp",
-        Hash(String, String).new
-      )
+      previous = ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"]?
+      result = begin
+        ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = "1"
+        Sandbox::Sandboxing::WindowsSandbox.run_windows_sandbox_capture(
+          "workspace-write",
+          ["/bin/echo", "hello"],
+          "/tmp",
+          Hash(String, String).new
+        )
+      ensure
+        if previous
+          ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = previous
+        else
+          ENV.delete("SBX_WINDOWS_ALLOW_INSECURE_FALLBACK")
+        end
+      end
       result.exit_code.should eq(0)
       String.new(result.stdout).includes?("hello").should be_true
     {% else %}
@@ -1873,13 +1950,23 @@ describe Sandbox::Sandboxing::WindowsSandbox do
 
   it "marks capture as timed out when timeout is reached" do
     {% if flag?(:win32) %}
-      result = Sandbox::Sandboxing::WindowsSandbox.run_windows_sandbox_capture(
-        "workspace-write",
-        ["/bin/sleep", "1"],
-        "/tmp",
-        Hash(String, String).new,
-        timeout_ms: 10
-      )
+      previous = ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"]?
+      result = begin
+        ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = "1"
+        Sandbox::Sandboxing::WindowsSandbox.run_windows_sandbox_capture(
+          "workspace-write",
+          ["/bin/sleep", "1"],
+          "/tmp",
+          Hash(String, String).new,
+          timeout_ms: 10
+        )
+      ensure
+        if previous
+          ENV["SBX_WINDOWS_ALLOW_INSECURE_FALLBACK"] = previous
+        else
+          ENV.delete("SBX_WINDOWS_ALLOW_INSECURE_FALLBACK")
+        end
+      end
       result.timed_out?.should be_true
       result.exit_code.should eq(192)
     {% else %}
@@ -1986,339 +2073,343 @@ describe Sandbox::Sandboxing::MacosPermissions do
   end
 end
 
-describe Sandbox::Sandboxing::SeatbeltPermissions do
-  it "default extensions include preferences read but not write" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.default
-    )
-    policy.policy.includes?("(allow user-preference-read)").should be_true
-    policy.policy.includes?("(allow user-preference-write)").should be_false
-  end
+{% if flag?(:darwin) %}
+  describe Sandbox::Sandboxing::SeatbeltPermissions do
+    it "default extensions include preferences read but not write" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.default
+      )
+      policy.policy.includes?("(allow user-preference-read)").should be_true
+      policy.policy.includes?("(allow user-preference-write)").should be_false
+    end
 
-  it "automation bundle ids are normalized and scoped" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
-        macos_automation: Sandbox::Sandboxing::MacosAutomationPermission.bundle_ids(
-          [" com.apple.Notes ", "com.apple.Calendar", "com.apple.Notes"]
+    it "automation bundle ids are normalized and scoped" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
+          macos_automation: Sandbox::Sandboxing::MacosAutomationPermission.bundle_ids(
+            [" com.apple.Notes ", "com.apple.Calendar", "com.apple.Notes"]
+          )
         )
       )
-    )
 
-    policy.policy.includes?("(appleevent-destination \"com.apple.Calendar\")").should be_true
-    policy.policy.includes?("(appleevent-destination \"com.apple.Notes\")").should be_true
-  end
+      policy.policy.includes?("(appleevent-destination \"com.apple.Calendar\")").should be_true
+      policy.policy.includes?("(appleevent-destination \"com.apple.Notes\")").should be_true
+    end
 
-  it "preferences read-write emits write clauses" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
-        macos_preferences: Sandbox::Sandboxing::MacosPreferencesPermission::ReadWrite
+    it "preferences read-write emits write clauses" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
+          macos_preferences: Sandbox::Sandboxing::MacosPreferencesPermission::ReadWrite
+        )
       )
-    )
-    policy.policy.includes?("(allow user-preference-write)").should be_true
-    policy.policy.includes?("ipc-posix-shm-write-create").should be_true
-  end
+      policy.policy.includes?("(allow user-preference-write)").should be_true
+      policy.policy.includes?("ipc-posix-shm-write-create").should be_true
+    end
 
-  it "automation all emits unscoped appleevent send" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
-        macos_automation: Sandbox::Sandboxing::MacosAutomationPermission.all
+    it "automation all emits unscoped appleevent send" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
+          macos_automation: Sandbox::Sandboxing::MacosAutomationPermission.all
+        )
       )
-    )
-    policy.policy.includes?("(allow appleevent-send)").should be_true
-    policy.policy.includes?("com.apple.coreservices.appleevents").should be_true
-  end
+      policy.policy.includes?("(allow appleevent-send)").should be_true
+      policy.policy.includes?("com.apple.coreservices.appleevents").should be_true
+    end
 
-  it "launch services emit lookup and lsopen clauses" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
-        macos_launch_services: true
+    it "launch services emit lookup and lsopen clauses" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
+          macos_launch_services: true
+        )
       )
-    )
-    policy.policy.includes?("com.apple.coreservices.launchservicesd").should be_true
-    policy.policy.includes?("(allow lsopen)").should be_true
-  end
+      policy.policy.includes?("com.apple.coreservices.launchservicesd").should be_true
+      policy.policy.includes?("(allow lsopen)").should be_true
+    end
 
-  it "accessibility, calendar, and reminders emit mach lookups" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
-        macos_accessibility: true,
-        macos_calendar: true,
-        macos_reminders: true
+    it "accessibility, calendar, and reminders emit mach lookups" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
+          macos_accessibility: true,
+          macos_calendar: true,
+          macos_reminders: true
+        )
       )
-    )
-    policy.policy.includes?("com.apple.axserver").should be_true
-    policy.policy.includes?("com.apple.CalendarAgent").should be_true
-    policy.policy.includes?("com.apple.remindd").should be_true
-  end
+      policy.policy.includes?("com.apple.axserver").should be_true
+      policy.policy.includes?("com.apple.CalendarAgent").should be_true
+      policy.policy.includes?("com.apple.remindd").should be_true
+    end
 
-  it "contacts read-only omits securityd clause" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
-        macos_contacts: Sandbox::Sandboxing::MacosContactsPermission::ReadOnly
+    it "contacts read-only omits securityd clause" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
+          macos_contacts: Sandbox::Sandboxing::MacosContactsPermission::ReadOnly
+        )
       )
-    )
-    policy.policy.includes?("com.apple.contactsd.persistence").should be_true
-    policy.policy.includes?("com.apple.securityd.xpc").should be_false
-  end
+      policy.policy.includes?("com.apple.contactsd.persistence").should be_true
+      policy.policy.includes?("com.apple.securityd.xpc").should be_false
+    end
 
-  it "contacts read-write adds securityd clause and addressbook param" do
-    policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
-      Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
-        macos_contacts: Sandbox::Sandboxing::MacosContactsPermission::ReadWrite
+    it "contacts read-write adds securityd clause and addressbook param" do
+      policy = Sandbox::Sandboxing::SeatbeltPermissions.build_seatbelt_extensions(
+        Sandbox::Sandboxing::MacosSeatbeltProfileExtensions.new(
+          macos_contacts: Sandbox::Sandboxing::MacosContactsPermission::ReadWrite
+        )
       )
-    )
 
-    policy.policy.includes?("com.apple.securityd.xpc").should be_true
-    policy.dir_params.any? { |(key, _)| key == "ADDRESSBOOK_DIR" }.should be_true
+      policy.policy.includes?("com.apple.securityd.xpc").should be_true
+      policy.dir_params.any? { |(key, _)| key == "ADDRESSBOOK_DIR" }.should be_true
+    end
   end
-end
+{% end %}
 
-describe Sandbox::Sandboxing::MacosSeatbelt do
-  it "base policy allows node cpu sysctls" do
-    profile = Sandbox::Sandboxing::MacosSeatbelt.profile_for(
-      Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted,
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted
-    )
+{% if flag?(:darwin) %}
+  describe Sandbox::Sandboxing::MacosSeatbelt do
+    it "base policy allows node cpu sysctls" do
+      profile = Sandbox::Sandboxing::MacosSeatbelt.profile_for(
+        Sandbox::Sandboxing::FileSystemSandboxPolicy.restricted,
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted
+      )
 
-    profile.includes?(%(sysctl-name "machdep.cpu.brand_string")).should be_true
-    profile.includes?(%(sysctl-name "hw.model")).should be_true
-  end
+      profile.includes?(%(sysctl-name "machdep.cpu.brand_string")).should be_true
+      profile.includes?(%(sysctl-name "hw.model")).should be_true
+    end
 
-  it "extracts loopback proxy ports from env" do
-    env = {
-      "HTTP_PROXY"  => "http://127.0.0.1:43128",
-      "HTTPS_PROXY" => "http://example.com:3128",
-      "ALL_PROXY"   => "socks5h://localhost:8080",
-    }
-    ports = Sandbox::Sandboxing::MacosSeatbelt.proxy_loopback_ports_from_env(env)
-    ports.should eq([8080, 43128])
-  end
+    it "extracts loopback proxy ports from env" do
+      env = {
+        "HTTP_PROXY"  => "http://127.0.0.1:43128",
+        "HTTPS_PROXY" => "http://example.com:3128",
+        "ALL_PROXY"   => "socks5h://localhost:8080",
+      }
+      ports = Sandbox::Sandboxing::MacosSeatbelt.proxy_loopback_ports_from_env(env)
+      ports.should eq([8080, 43128])
+    end
 
-  it "rejects relative paths during seatbelt path normalization" do
-    Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(
-      "relative.sock"
-    ).should be_nil
-  end
+    it "rejects relative paths during seatbelt path normalization" do
+      Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(
+        "relative.sock"
+      ).should be_nil
+    end
 
-  it "uses stable unix socket param names from sorted unique paths" do
-    proxy = Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-      unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::Restricted,
-      allowed_unix_socket_paths: ["/tmp/b.sock", "/tmp/a.sock", "/tmp/a.sock"]
-    )
-    params = Sandbox::Sandboxing::MacosSeatbelt.unix_socket_dir_params(proxy)
-    params.should eq(
-      [
-        {"UNIX_SOCKET_PATH_0", "/tmp/a.sock"},
-        {"UNIX_SOCKET_PATH_1", "/tmp/b.sock"},
-      ]
-    )
-  end
-
-  it "emits newline terminated unix socket policies" do
-    allowlist = Sandbox::Sandboxing::MacosSeatbelt.unix_socket_policy(
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+    it "uses stable unix socket param names from sorted unique paths" do
+      proxy = Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
         unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::Restricted,
-        allowed_unix_socket_paths: ["/tmp/example.sock"]
+        allowed_unix_socket_paths: ["/tmp/b.sock", "/tmp/a.sock", "/tmp/a.sock"]
       )
-    )
-    allowall = Sandbox::Sandboxing::MacosSeatbelt.unix_socket_policy(
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-        unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::AllowAll
+      params = Sandbox::Sandboxing::MacosSeatbelt.unix_socket_dir_params(proxy)
+      params.should eq(
+        [
+          {"UNIX_SOCKET_PATH_0", "/tmp/a.sock"},
+          {"UNIX_SOCKET_PATH_1", "/tmp/b.sock"},
+        ]
       )
-    )
+    end
 
-    allowlist.ends_with?('\n').should be_true
-    allowall.ends_with?('\n').should be_true
-  end
-
-  it "routes network through proxy ports in restricted mode" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      false,
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-        ports: [43128, 48081],
-        has_proxy_config: true
+    it "emits newline terminated unix socket policies" do
+      allowlist = Sandbox::Sandboxing::MacosSeatbelt.unix_socket_policy(
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::Restricted,
+          allowed_unix_socket_paths: ["/tmp/example.sock"]
+        )
       )
-    )
-
-    policy.includes?(
-      %(allow network-outbound (remote ip "localhost:43128"))
-    ).should be_true
-    policy.includes?(
-      %(allow network-outbound (remote ip "localhost:48081"))
-    ).should be_true
-    policy.includes?("\n(allow network-outbound)\n").should be_false
-    policy.includes?(%(allow network-bind (local ip "localhost:*"))).should be_false
-    policy.includes?(%(allow network-inbound (local ip "localhost:*"))).should be_false
-  end
-
-  it "allows loopback binding only when explicitly enabled" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      false,
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-        ports: [43128],
-        has_proxy_config: true,
-        allow_local_binding: true
+      allowall = Sandbox::Sandboxing::MacosSeatbelt.unix_socket_policy(
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::AllowAll
+        )
       )
-    )
 
-    policy.includes?(%(allow network-bind (local ip "localhost:*"))).should be_true
-    policy.includes?(%(allow network-inbound (local ip "localhost:*"))).should be_true
-    policy.includes?(%(allow network-outbound (remote ip "localhost:*"))).should be_true
-    policy.includes?("\n(allow network-outbound)\n").should be_false
-  end
+      allowlist.ends_with?('\n').should be_true
+      allowall.ends_with?('\n').should be_true
+    end
 
-  it "keeps restricted policy when proxy config exists without loopback ports" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      false,
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-        has_proxy_config: true
+    it "routes network through proxy ports in restricted mode" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        false,
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          ports: [43128, 48081],
+          has_proxy_config: true
+        )
       )
-    )
 
-    policy.includes?("(socket-domain AF_SYSTEM)").should be_true
-    policy.includes?("\n(allow network-outbound)\n").should be_false
-    policy.includes?(%(allow network-outbound (remote ip "localhost:))).should be_false
-  end
+      policy.includes?(
+        %(allow network-outbound (remote ip "localhost:43128"))
+      ).should be_true
+      policy.includes?(
+        %(allow network-outbound (remote ip "localhost:48081"))
+      ).should be_true
+      policy.includes?("\n(allow network-outbound)\n").should be_false
+      policy.includes?(%(allow network-bind (local ip "localhost:*"))).should be_false
+      policy.includes?(%(allow network-inbound (local ip "localhost:*"))).should be_false
+    end
 
-  it "keeps restricted policy for managed network without proxy config" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      true,
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new
-    )
-
-    policy.includes?("(socket-domain AF_SYSTEM)").should be_true
-    policy.includes?("\n(allow network-outbound)\n").should be_false
-  end
-
-  it "allows all unix sockets when configured" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      false,
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-        ports: [43128],
-        has_proxy_config: true,
-        unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::AllowAll
+    it "allows loopback binding only when explicitly enabled" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        false,
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          ports: [43128],
+          has_proxy_config: true,
+          allow_local_binding: true
+        )
       )
-    )
 
-    policy.includes?("(allow system-socket (socket-domain AF_UNIX))").should be_true
-    policy.includes?("(allow network-bind (local unix-socket))").should be_true
-    policy.includes?("(allow network-outbound (remote unix-socket))").should be_true
-  end
+      policy.includes?(%(allow network-bind (local ip "localhost:*"))).should be_true
+      policy.includes?(%(allow network-inbound (local ip "localhost:*"))).should be_true
+      policy.includes?(%(allow network-outbound (remote ip "localhost:*"))).should be_true
+      policy.includes?("\n(allow network-outbound)\n").should be_false
+    end
 
-  it "allowlists unix socket paths when configured" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
-      false,
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-        ports: [43128],
-        has_proxy_config: true,
-        unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::Restricted,
-        allowed_unix_socket_paths: ["/tmp/example.sock"]
+    it "keeps restricted policy when proxy config exists without loopback ports" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        false,
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          has_proxy_config: true
+        )
       )
-    )
 
-    policy.includes?("(allow system-socket (socket-domain AF_UNIX))").should be_true
-    policy.includes?(
-      %(allow network-bind (local unix-socket (subpath (param "UNIX_SOCKET_PATH_0"))))
-    ).should be_true
-    policy.includes?(
-      %(allow network-outbound (remote unix-socket (subpath (param "UNIX_SOCKET_PATH_0"))))
-    ).should be_true
-  end
+      policy.includes?("(socket-domain AF_SYSTEM)").should be_true
+      policy.includes?("\n(allow network-outbound)\n").should be_false
+      policy.includes?(%(allow network-outbound (remote ip "localhost:))).should be_false
+    end
 
-  it "keeps proxy-only behavior when full network policy has proxy config" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
-      Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
-      false,
-      Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
-        ports: [43128],
-        has_proxy_config: true
+    it "keeps restricted policy for managed network without proxy config" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        true,
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new
       )
-    )
 
-    policy.includes?(%(allow network-outbound (remote ip "localhost:43128"))).should be_true
-    policy.includes?("\n(allow network-outbound)\n").should be_false
-    policy.includes?("\n(allow network-inbound)\n").should be_false
+      policy.includes?("(socket-domain AF_SYSTEM)").should be_true
+      policy.includes?("\n(allow network-outbound)\n").should be_false
+    end
+
+    it "allows all unix sockets when configured" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        false,
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          ports: [43128],
+          has_proxy_config: true,
+          unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::AllowAll
+        )
+      )
+
+      policy.includes?("(allow system-socket (socket-domain AF_UNIX))").should be_true
+      policy.includes?("(allow network-bind (local unix-socket))").should be_true
+      policy.includes?("(allow network-outbound (remote unix-socket))").should be_true
+    end
+
+    it "allowlists unix socket paths when configured" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Restricted,
+        false,
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          ports: [43128],
+          has_proxy_config: true,
+          unix_domain_socket_policy_kind: Sandbox::Sandboxing::MacosSeatbelt::UnixDomainSocketPolicyKind::Restricted,
+          allowed_unix_socket_paths: ["/tmp/example.sock"]
+        )
+      )
+
+      policy.includes?("(allow system-socket (socket-domain AF_UNIX))").should be_true
+      policy.includes?(
+        %(allow network-bind (local unix-socket (subpath (param "UNIX_SOCKET_PATH_0"))))
+      ).should be_true
+      policy.includes?(
+        %(allow network-outbound (remote unix-socket (subpath (param "UNIX_SOCKET_PATH_0"))))
+      ).should be_true
+    end
+
+    it "keeps proxy-only behavior when full network policy has proxy config" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.dynamic_network_policy(
+        Sandbox::Sandboxing::NetworkSandboxPolicy::Enabled,
+        false,
+        Sandbox::Sandboxing::MacosSeatbelt::ProxyPolicyInputs.new(
+          ports: [43128],
+          has_proxy_config: true
+        )
+      )
+
+      policy.includes?(%(allow network-outbound (remote ip "localhost:43128"))).should be_true
+      policy.includes?("\n(allow network-outbound)\n").should be_false
+      policy.includes?("\n(allow network-inbound)\n").should be_false
+    end
+
+    it "detects read-only .git and .codex protected subpaths in writable root" do
+      temp = "/tmp/macos-seatbelt-protected-subpaths-#{Random.rand(100_000)}"
+      root = File.join(temp, "workspace")
+      git = File.join(root, ".git")
+      codex = File.join(root, ".codex")
+      Dir.mkdir_p(git)
+      Dir.mkdir_p(codex)
+
+      paths = Sandbox::Sandboxing::MacosSeatbelt.protected_git_codex_subpaths(root)
+      expected = [
+        Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(codex),
+        Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(git),
+      ].compact
+      expected.sort!
+      paths.should eq(expected)
+      FileUtils.rm_rf(temp)
+    end
+
+    it "detects read-only git pointer target path from .git file" do
+      temp = "/tmp/macos-seatbelt-git-pointer-#{Random.rand(100_000)}"
+      root = File.join(temp, "worktree")
+      actual_gitdir = File.join(root, "actual-gitdir")
+      dot_git = File.join(root, ".git")
+      Dir.mkdir_p(actual_gitdir)
+      Dir.mkdir_p(root)
+      File.write(dot_git, "gitdir: #{actual_gitdir}\n")
+
+      paths = Sandbox::Sandboxing::MacosSeatbelt.protected_git_codex_subpaths(root)
+      paths.includes?(
+        Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(dot_git)
+      ).should be_true
+      paths.includes?(
+        Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(actual_gitdir)
+      ).should be_true
+      FileUtils.rm_rf(temp)
+    end
+
+    it "detects protected subpaths when cwd itself is a git repo" do
+      temp = "/tmp/macos-seatbelt-cwd-git-repo-#{Random.rand(100_000)}"
+      cwd = File.join(temp, "repo")
+      dot_git = File.join(cwd, ".git")
+      dot_codex = File.join(cwd, ".codex")
+      Dir.mkdir_p(dot_git)
+      Dir.mkdir_p(dot_codex)
+
+      paths = Sandbox::Sandboxing::MacosSeatbelt.protected_git_codex_subpaths(cwd)
+      paths.includes?(
+        Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(dot_git)
+      ).should be_true
+      paths.includes?(
+        Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(dot_codex)
+      ).should be_true
+      FileUtils.rm_rf(temp)
+    end
+
+    it "excludes unreadable paths from full disk read and write carveout policy" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.unreadable_root_carveout_policy(
+        ["/tmp/codex-unreadable"]
+      )
+      policy.includes?(%(require-not (subpath "/tmp/codex-unreadable"))).should be_true
+    end
+
+    it "excludes unreadable paths from readable roots carveout policy" do
+      policy = Sandbox::Sandboxing::MacosSeatbelt.unreadable_root_carveout_policy(
+        ["/tmp/codex-readable/private"]
+      )
+      policy.includes?(%(require-not (subpath "/tmp/codex-readable/private"))).should be_true
+    end
+
+    it "legacy workspace write nested readable root stays writable" do
+      Sandbox::Sandboxing::MacosSeatbelt.legacy_workspace_write_nested_readable_root_stays_writable?(
+        "/tmp/workspace",
+        "/tmp/workspace/docs"
+      ).should be_true
+    end
   end
-
-  it "detects read-only .git and .codex protected subpaths in writable root" do
-    temp = "/tmp/macos-seatbelt-protected-subpaths-#{Random.rand(100_000)}"
-    root = File.join(temp, "workspace")
-    git = File.join(root, ".git")
-    codex = File.join(root, ".codex")
-    Dir.mkdir_p(git)
-    Dir.mkdir_p(codex)
-
-    paths = Sandbox::Sandboxing::MacosSeatbelt.protected_git_codex_subpaths(root)
-    expected = [
-      Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(codex),
-      Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(git),
-    ].compact
-    expected.sort!
-    paths.should eq(expected)
-    FileUtils.rm_rf(temp)
-  end
-
-  it "detects read-only git pointer target path from .git file" do
-    temp = "/tmp/macos-seatbelt-git-pointer-#{Random.rand(100_000)}"
-    root = File.join(temp, "worktree")
-    actual_gitdir = File.join(root, "actual-gitdir")
-    dot_git = File.join(root, ".git")
-    Dir.mkdir_p(actual_gitdir)
-    Dir.mkdir_p(root)
-    File.write(dot_git, "gitdir: #{actual_gitdir}\n")
-
-    paths = Sandbox::Sandboxing::MacosSeatbelt.protected_git_codex_subpaths(root)
-    paths.includes?(
-      Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(dot_git)
-    ).should be_true
-    paths.includes?(
-      Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(actual_gitdir)
-    ).should be_true
-    FileUtils.rm_rf(temp)
-  end
-
-  it "detects protected subpaths when cwd itself is a git repo" do
-    temp = "/tmp/macos-seatbelt-cwd-git-repo-#{Random.rand(100_000)}"
-    cwd = File.join(temp, "repo")
-    dot_git = File.join(cwd, ".git")
-    dot_codex = File.join(cwd, ".codex")
-    Dir.mkdir_p(dot_git)
-    Dir.mkdir_p(dot_codex)
-
-    paths = Sandbox::Sandboxing::MacosSeatbelt.protected_git_codex_subpaths(cwd)
-    paths.includes?(
-      Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(dot_git)
-    ).should be_true
-    paths.includes?(
-      Sandbox::Sandboxing::MacosSeatbelt.normalize_path_for_sandbox(dot_codex)
-    ).should be_true
-    FileUtils.rm_rf(temp)
-  end
-
-  it "excludes unreadable paths from full disk read and write carveout policy" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.unreadable_root_carveout_policy(
-      ["/tmp/codex-unreadable"]
-    )
-    policy.includes?(%(require-not (subpath "/tmp/codex-unreadable"))).should be_true
-  end
-
-  it "excludes unreadable paths from readable roots carveout policy" do
-    policy = Sandbox::Sandboxing::MacosSeatbelt.unreadable_root_carveout_policy(
-      ["/tmp/codex-readable/private"]
-    )
-    policy.includes?(%(require-not (subpath "/tmp/codex-readable/private"))).should be_true
-  end
-
-  it "legacy workspace write nested readable root stays writable" do
-    Sandbox::Sandboxing::MacosSeatbelt.legacy_workspace_write_nested_readable_root_stays_writable?(
-      "/tmp/workspace",
-      "/tmp/workspace/docs"
-    ).should be_true
-  end
-end
+{% end %}

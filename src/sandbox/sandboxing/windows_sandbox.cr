@@ -24,14 +24,14 @@ module Sandbox
         ".pki",
         ".terraform.d",
       }
-      SANDBOX_USERS_GROUP     = "CodexSandboxUsers"
-      SETUP_VERSION           = 5
-      OFFLINE_USERNAME        = "CodexSandboxOffline"
-      ONLINE_USERNAME         = "CodexSandboxOnline"
-      MAX_ITEMS_PER_DIR       = 1000
-      AUDIT_TIME_LIMIT        = 2.seconds
-      MAX_CHECKED_LIMIT       = 50_000
-      AUDIT_SKIP_DIR_SUFFIXES = {
+      DEFAULT_SANDBOX_USERS_GROUP = "CodexSandboxUsers"
+      SETUP_VERSION               = 5
+      DEFAULT_OFFLINE_USERNAME    = "CodexSandboxOffline"
+      DEFAULT_ONLINE_USERNAME     = "CodexSandboxOnline"
+      MAX_ITEMS_PER_DIR           = 1000
+      AUDIT_TIME_LIMIT            = 2.seconds
+      MAX_CHECKED_LIMIT           = 50_000
+      AUDIT_SKIP_DIR_SUFFIXES     = {
         "/windows/installer",
         "/windows/registration",
         "/programdata",
@@ -112,8 +112,8 @@ module Sandbox
         getter online_username : String
 
         def initialize(
-          @offline_username : String = OFFLINE_USERNAME,
-          @online_username : String = ONLINE_USERNAME,
+          @offline_username : String = WindowsSandbox.offline_username,
+          @online_username : String = WindowsSandbox.online_username,
         )
         end
       end
@@ -144,8 +144,8 @@ module Sandbox
 
         def initialize(
           @version : Int32 = SETUP_VERSION,
-          @offline : SandboxUserRecord = SandboxUserRecord.new(OFFLINE_USERNAME, ""),
-          @online : SandboxUserRecord = SandboxUserRecord.new(ONLINE_USERNAME, ""),
+          @offline : SandboxUserRecord = SandboxUserRecord.new(WindowsSandbox.offline_username, ""),
+          @online : SandboxUserRecord = SandboxUserRecord.new(WindowsSandbox.online_username, ""),
         )
         end
 
@@ -162,8 +162,8 @@ module Sandbox
 
         def initialize(
           @version : Int32 = SETUP_VERSION,
-          @offline_username : String = OFFLINE_USERNAME,
-          @online_username : String = ONLINE_USERNAME,
+          @offline_username : String = WindowsSandbox.offline_username,
+          @online_username : String = WindowsSandbox.online_username,
         )
         end
 
@@ -299,6 +299,9 @@ module Sandbox
       end
 
       @@sandbox_home_override : String? = nil
+      @@sandbox_users_group_override : String? = nil
+      @@offline_username_override : String? = nil
+      @@online_username_override : String? = nil
 
       def self.sandbox_home : String
         @@sandbox_home_override || ENV[SANDBOX_HOME_ENV_VAR]? || Dir.current
@@ -306,6 +309,33 @@ module Sandbox
 
       def self.sandbox_home=(value : String) : String
         @@sandbox_home_override = value
+        value
+      end
+
+      def self.sandbox_users_group : String
+        @@sandbox_users_group_override || DEFAULT_SANDBOX_USERS_GROUP
+      end
+
+      def self.sandbox_users_group=(value : String) : String
+        @@sandbox_users_group_override = value
+        value
+      end
+
+      def self.offline_username : String
+        @@offline_username_override || DEFAULT_OFFLINE_USERNAME
+      end
+
+      def self.offline_username=(value : String) : String
+        @@offline_username_override = value
+        value
+      end
+
+      def self.online_username : String
+        @@online_username_override || DEFAULT_ONLINE_USERNAME
+      end
+
+      def self.online_username=(value : String) : String
+        @@online_username_override = value
         value
       end
 
@@ -920,7 +950,7 @@ module Sandbox
       end
 
       def self.hide_newly_created_users(
-        usernames : Array(String) = [OFFLINE_USERNAME, ONLINE_USERNAME],
+        usernames : Array(String) = [offline_username, online_username],
         home_dir : String = sandbox_home,
       ) : Nil
         return if usernames.empty?
@@ -963,12 +993,17 @@ module Sandbox
         false
       end
 
-      def self.ensure_local_group(_name : String = SANDBOX_USERS_GROUP) : Bool
+      def self.ensure_local_group(_name : String = sandbox_users_group) : Bool
         {% if flag?(:win32) %}
           result = run_command_capture("net", ["localgroup", _name])
           return true if result[0].success?
           create_result = run_command_capture("net", ["localgroup", _name, "/add"])
-          create_result[0].success? || command_indicates_existing?(create_result[1], create_result[2])
+          return true if create_result[0].success?
+          return true if command_indicates_existing?(create_result[1], create_result[2])
+          raise SetupFailure.new(
+            SetupErrorCode::HelperUsersGroupCreateFailed,
+            "failed to ensure local group #{_name}: #{create_result[2].strip}"
+          )
         {% else %}
           raise "Windows sandbox is only available on Windows"
         {% end %}
@@ -980,7 +1015,12 @@ module Sandbox
             "net",
             ["localgroup", _group_name, _username, "/add"]
           )
-          result[0].success? || command_indicates_existing?(result[1], result[2])
+          return true if result[0].success?
+          return true if command_indicates_existing?(result[1], result[2])
+          raise SetupFailure.new(
+            SetupErrorCode::HelperUserCreateOrUpdateFailed,
+            "failed to add #{_username} to group #{_group_name}: #{result[2].strip}"
+          )
         {% else %}
           raise "Windows sandbox is only available on Windows"
         {% end %}
@@ -995,7 +1035,12 @@ module Sandbox
             "net",
             ["user", _username, password, "/add", "/y"]
           )
-          create_result[0].success? || command_indicates_existing?(create_result[1], create_result[2])
+          return true if create_result[0].success?
+          return true if command_indicates_existing?(create_result[1], create_result[2])
+          raise SetupFailure.new(
+            SetupErrorCode::HelperUserCreateOrUpdateFailed,
+            "failed to ensure local user #{_username}: #{create_result[2].strip}"
+          )
         {% else %}
           raise "Windows sandbox is only available on Windows"
         {% end %}
@@ -1006,7 +1051,7 @@ module Sandbox
       end
 
       def self.ensure_sandbox_users_group : Bool
-        ensure_local_group(SANDBOX_USERS_GROUP)
+        ensure_local_group(sandbox_users_group)
       end
 
       def self.resolve_sid(value : String) : String
@@ -1021,14 +1066,17 @@ module Sandbox
             sid = result[1].lines.first?.to_s.strip
             return sid unless sid.empty?
           end
-          raise "failed to resolve SID for #{value}: #{result[2].strip}"
+          raise SetupFailure.new(
+            SetupErrorCode::HelperSidResolveFailed,
+            "failed to resolve SID for #{value}: #{result[2].strip}"
+          )
         {% else %}
           raise "Windows sandbox is only available on Windows"
         {% end %}
       end
 
       def self.resolve_sandbox_users_group_sid : String
-        resolve_sid(SANDBOX_USERS_GROUP)
+        resolve_sid(sandbox_users_group)
       end
 
       def self.sid_bytes_to_psid(bytes : Bytes) : String
@@ -1065,10 +1113,17 @@ module Sandbox
 
       def self.provision_sandbox_users : Bool
         ensure_sandbox_users_group &&
-          ensure_sandbox_user(OFFLINE_USERNAME) &&
-          ensure_sandbox_user(ONLINE_USERNAME) &&
-          ensure_local_group_member(SANDBOX_USERS_GROUP, OFFLINE_USERNAME) &&
-          ensure_local_group_member(SANDBOX_USERS_GROUP, ONLINE_USERNAME)
+          ensure_sandbox_user(offline_username) &&
+          ensure_sandbox_user(online_username) &&
+          ensure_local_group_member(sandbox_users_group, offline_username) &&
+          ensure_local_group_member(sandbox_users_group, online_username)
+      rescue ex : SetupFailure
+        raise ex
+      rescue ex
+        raise SetupFailure.new(
+          SetupErrorCode::HelperUserProvisionFailed,
+          ex.message || "sandbox user provisioning failed"
+        )
       end
 
       def self.setup_error_path(home_dir : String = sandbox_home) : String
@@ -1202,6 +1257,8 @@ module Sandbox
           raise "Windows sandbox is only available on Windows"
         {% end %}
 
+        raise "Windows restricted-token backend is required; insecure fallback disabled" unless windows_insecure_fallback_enabled?
+
         policy_obj = parse_policy(policy)
         Dir.mkdir_p(sandbox_dir(home_dir))
         Dir.mkdir_p(sandbox_secrets_dir(home_dir))
@@ -1209,8 +1266,8 @@ module Sandbox
         provision_sandbox_users
 
         users = SandboxUsersFile.new(
-          offline: SandboxUserRecord.new(OFFLINE_USERNAME, protect("offline")),
-          online: SandboxUserRecord.new(ONLINE_USERNAME, protect("online"))
+          offline: SandboxUserRecord.new(offline_username, protect("offline")),
+          online: SandboxUserRecord.new(online_username, protect("online"))
         )
         File.write(sandbox_users_path(home_dir), users.to_json)
 
@@ -1239,10 +1296,7 @@ module Sandbox
         hide_current_user_profile_dir(home_dir)
         hide_newly_created_users(home_dir: home_dir)
       rescue error
-        report = SetupErrorReport.new(
-          SetupErrorCode::HelperUnknownError,
-          error.message || "unknown setup failure"
-        )
+        report = setup_report_for_error(error)
         write_setup_error_report(report, home_dir)
         raise error
       end
@@ -1361,6 +1415,17 @@ module Sandbox
 
       private def self.windows_insecure_fallback_enabled? : Bool
         ENV[WINDOWS_INSECURE_FALLBACK_ENV]? == "1"
+      end
+
+      private def self.setup_report_for_error(error : Exception) : SetupErrorReport
+        if failure = extract_failure(error)
+          SetupErrorReport.new(failure.code, failure.message || "setup failure")
+        else
+          SetupErrorReport.new(
+            SetupErrorCode::HelperUnknownError,
+            error.message || "unknown setup failure"
+          )
+        end
       end
 
       private def self.stable_path_list(paths : Array(String)) : Array(String)

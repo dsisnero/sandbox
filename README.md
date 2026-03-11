@@ -68,6 +68,11 @@ request = manager.transform(
 
 # Optional: set a shared Windows sandbox state root for your agent runtime.
 Sandbox::Sandboxing::WindowsSandbox.sandbox_home = "/var/lib/my-agent/sandbox-state"
+
+# Optional: customize Windows sandbox account/group names for your agent.
+Sandbox::Sandboxing::WindowsSandbox.sandbox_users_group = "AgentSandboxUsers"
+Sandbox::Sandboxing::WindowsSandbox.offline_username = "AgentSandboxOffline"
+Sandbox::Sandboxing::WindowsSandbox.online_username = "AgentSandboxOnline"
 ```
 
 ### What The Example Is Doing
@@ -84,6 +89,10 @@ Sandbox::Sandboxing::WindowsSandbox.sandbox_home = "/var/lib/my-agent/sandbox-st
    - On Linux, passing `codex_linux_sandbox_exe` + `use_linux_sandbox_bwrap: true` wraps the command for the Linux sandbox binary.
    - It also injects policy-derived env vars (for example network-disabled signaling under restricted network policy).
    - On Windows, `WindowsSandbox.sandbox_home` controls where setup metadata/log files are stored (defaults to current working directory unless overridden).
+   - Windows sandbox identity defaults are configurable via:
+     - `WindowsSandbox.sandbox_users_group`
+     - `WindowsSandbox.offline_username`
+     - `WindowsSandbox.online_username`
 5. Execute with your own runner:
    - This library prepares the request; it does not launch the final process for you.
    - Your orchestrator should run `request.command` with `request.env` and `request.cwd`.
