@@ -41,3 +41,7 @@ jobs:
 
       - name: Run specs
         run: crystal spec
+
+      - name: Verify split parity manifests
+        if: matrix.os == 'ubuntu-latest'
+        run: make parity-verify
