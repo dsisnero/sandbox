@@ -1,7 +1,7 @@
 # Usage Guide
 
 Library version: `v0.7.0`
-Release notes: [CHANGELOG.md](/Users/dominic/repos/github.com/dsisnero/sandbox/CHANGELOG.md)
+Release notes: [CHANGELOG.md](../CHANGELOG.md)
 
 ## Purpose
 
@@ -142,8 +142,8 @@ The library defines both `CommandSpec` and `ExecRequest`.
 
 Definitions:
 
-- [CommandSpec](/Users/dominic/repos/github.com/dsisnero/sandbox/src/sandbox/sandboxing.cr)
-- [ExecRequest](/Users/dominic/repos/github.com/dsisnero/sandbox/src/sandbox/sandboxing.cr)
+- [CommandSpec](../src/sandbox/sandboxing.cr)
+- [ExecRequest](../src/sandbox/sandboxing.cr)
 
 ## Transform Inputs And Outputs
 
@@ -253,6 +253,6 @@ At minimum your agent runtime should do all of the following:
 
 ## Related Docs
 
-- [Architecture](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/architecture.md)
-- [Development](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/development.md)
-- [Testing](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/testing.md)
+- [Architecture](architecture.md)
+- [Development](development.md)
+- [Testing](testing.md)

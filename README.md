@@ -11,7 +11,7 @@ Originally ported from sandbox code in [openai/codex](https://github.com/openai/
 The upstream Codex source is historical porting input, not an application constraint for this library.
 
 Current release: `v0.7.0`
-Changelog: [CHANGELOG.md](/Users/dominic/repos/github.com/dsisnero/sandbox/CHANGELOG.md)
+Changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ## What This Library Does
 
@@ -41,8 +41,8 @@ require "sandbox"
 
 Use the full guide:
 
-- [Usage Guide](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/usage.md)
-- [Architecture](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/architecture.md)
+- [Usage Guide](docs/usage.md)
+- [Architecture](docs/architecture.md)
 
 ## Project Layout
 
@@ -54,13 +54,13 @@ Use the full guide:
 
 ## Documentation
 
-- [Usage Guide](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/usage.md)
-- [Architecture](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/architecture.md)
-- [Development](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/development.md)
-- [Testing](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/testing.md)
-- [Coding Standards](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/coding-standards.md)
-- [PR Workflow](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/pr-workflow.md)
-- [Sandbox Porting Notes](/Users/dominic/repos/github.com/dsisnero/sandbox/docs/sandbox-porting-notes.md)
+- [Usage Guide](docs/usage.md)
+- [Architecture](docs/architecture.md)
+- [Development](docs/development.md)
+- [Testing](docs/testing.md)
+- [Coding Standards](docs/coding-standards.md)
+- [PR Workflow](docs/pr-workflow.md)
+- [Sandbox Porting Notes](docs/sandbox-porting-notes.md)
 
 ## Sandbox Port Status (Current)
 
@@ -104,7 +104,7 @@ CI runs these checks on GitHub Actions for:
 - macOS (`macos-latest`)
 - Windows (`windows-latest`)
 
-Workflow file: [ci.yml](/Users/dominic/repos/github.com/dsisnero/sandbox/.github/workflows/ci.yml)
+Workflow file: [ci.yml](.github/workflows/ci.yml)
 
 Current gate status on this branch:
 - `make lint` passes
